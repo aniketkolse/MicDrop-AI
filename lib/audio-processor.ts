@@ -98,7 +98,9 @@ async function mixMusic(
     musicSource.loop = true;
     const gain = offline.createGain();
     const clamped = Math.max(0, Math.min(1, musicGain)) * 0.45;
-    gain.gain.setValueAtTime(clamped, 0);
+    // Fade in music over first second, then hold, then fade out at end
+    gain.gain.setValueAtTime(0, 0);
+    gain.gain.linearRampToValueAtTime(clamped, Math.min(1, narration.duration));
     gain.gain.setValueAtTime(clamped, Math.max(0, narration.duration - 1.2));
     gain.gain.linearRampToValueAtTime(0.0001, narration.duration + 0.4);
     musicSource.connect(gain).connect(offline.destination);
@@ -107,6 +109,29 @@ async function mixMusic(
     return await offline.startRendering();
   } finally {
     void context.close();
+  }
+}
+
+/**
+ * Apply a soft limiter to prevent clipping when mixing narration and music.
+ * Samples above 0.85 are softly compressed to avoid harsh digital clipping.
+ */
+function applySoftLimiter(buffer: AudioBuffer): void {
+  const threshold = 0.85;
+  const knee = 0.1;
+  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+    const data = buffer.getChannelData(channel);
+    for (let i = 0; i < data.length; i++) {
+      let sample = data[i];
+      if (sample > threshold) {
+        const over = sample - threshold;
+        sample = threshold + (over * knee) / (over + knee);
+      } else if (sample < -threshold) {
+        const over = Math.abs(sample) - threshold;
+        sample = -(threshold + (over * knee) / (over + knee));
+      }
+      data[i] = Math.max(-1, Math.min(1, sample));
+    }
   }
 }
 
@@ -169,6 +194,9 @@ export async function produceEpisodeAudio({
       onProgress({ type: "phase", phase: "mixing" });
       finalBuffer = await mixMusic(finalBuffer, musicFile, settings.musicVolume ?? 0.2);
     }
+
+    // Apply soft limiter to prevent clipping from narration + music mix
+    applySoftLimiter(finalBuffer);
 
     onProgress({ type: "phase", phase: "encoding" });
     const blob = encodeWav(finalBuffer);
