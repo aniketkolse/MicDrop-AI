@@ -2,17 +2,23 @@
 
 import * as React from "react";
 import { produceEpisodeAudio, type AudioProgress } from "@/lib/audio-processor";
-import { deleteEpisodeAudio, saveEpisode } from "@/lib/db";
+import { deleteEpisodeAudio, saveEpisode, listEpisodes, getEpisode, getEpisodeAudio } from "@/lib/db";
 import { defaultVoiceIds, getLanguage } from "@/lib/voices";
 import { nanoid } from "@/lib/utils";
 import type {
+  Audience,
   EpisodeMeta,
   GenerationState,
+  LanguageCode,
   PodcastScript,
   PodcastSettings,
+  PodcastStyle,
   ScriptSegment,
   SegmentProgress,
+  SourceType,
 } from "@/types/podcast";
+
+type SupabaseUser = { id: string; email?: string } | null;
 
 const DEFAULT_SETTINGS: PodcastSettings = {
   sourceType: "topic",
@@ -59,6 +65,10 @@ interface StudioContextValue {
     volume: number;
     rate: number;
   };
+  user: SupabaseUser | null;
+  isAuthenticated: boolean;
+  supabaseReady: boolean;
+  setAuthState: (user: SupabaseUser | null, isAuthenticated: boolean) => void;
   updateSettings: (patch: Partial<PodcastSettings>) => void;
   setSourceText: (text: string, fileName?: string) => void;
   createScript: () => Promise<void>;
@@ -75,6 +85,7 @@ interface StudioContextValue {
   cancelGeneration: () => void;
   setMusicFile: (file: File | null) => void;
   loadEpisode: (meta: EpisodeMeta, audio: Blob | null) => void;
+  loadEpisodeFromSupabase: (podcastId: string) => Promise<{ script: PodcastScript; settings: PodcastSettings } | null>;
   resetStudio: () => void;
   notify: (type: "success" | "error" | "info", message: string) => void;
   dismissNotice: () => void;
@@ -114,6 +125,9 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   const [busyScript, setBusyScript] = React.useState(false);
   const [busyTranslation, setBusyTranslation] = React.useState(false);
   const [notice, setNotice] = React.useState<Notice>(null);
+  const [user, setUser] = React.useState<SupabaseUser>(null);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [supabaseReady, setSupabaseReady] = React.useState(false);
   const [playerState, setPlayerState] = React.useState({
     playing: false,
     currentTime: 0,
@@ -137,6 +151,30 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     settingsRef.current = settings;
   }, [settings]);
 
+  // Initialize Supabase auth state on mount
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/session", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            setUser({ id: data.user.id, email: data.user.email });
+            setIsAuthenticated(true);
+          }
+        }
+      } catch {
+        // Supabase not configured or session unavailable — continue in local-only mode
+      } finally {
+        if (!cancelled) setSupabaseReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const notify = React.useCallback((type: "success" | "error" | "info", message: string) => {
     setNotice({ type, message });
     if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
@@ -144,6 +182,172 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const dismissNotice = React.useCallback(() => setNotice(null), []);
+
+  // --- Supabase sync (authenticated users) ---
+
+  async function supabaseFetch(path: string, options: RequestInit = {}): Promise<Response> {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      ...options.headers,
+    };
+    return fetch(path, { ...options, headers });
+  }
+
+  async function createSupabasePodcast(script: PodcastScript, settings: PodcastSettings): Promise<string | null> {
+    if (!isAuthenticated || !user) return null;
+    try {
+      const res = await supabaseFetch("/api/podcasts", {
+        method: "POST",
+        body: JSON.stringify({
+          title: script.title,
+          description: script.description,
+          language: script.language,
+          status: "script_ready",
+          script,
+          original_prompt: settings.sourceText?.slice(0, 2000) ?? settings.topic,
+          source_type: settings.sourceType,
+        }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.podcast?.id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function syncSpeakersToSupabase(podcastId: string, script: PodcastScript): Promise<void> {
+    if (!isAuthenticated || !user) return;
+    try {
+      // Delete existing speakers and re-create
+      const existingRes = await supabaseFetch(`/api/podcasts/${podcastId}/speakers`);
+      if (existingRes.ok) {
+        const existing = await existingRes.json();
+        for (const s of existing.speakers ?? []) {
+          await supabaseFetch(`/api/podcasts/${podcastId}/speakers/${s.id}`, { method: "DELETE" });
+        }
+      }
+      for (const speaker of script.speakers) {
+        await supabaseFetch(`/api/podcasts/${podcastId}/speakers`, {
+          method: "POST",
+          body: JSON.stringify({
+            speaker_name: speaker.name,
+            speaker_role: speaker.role,
+            voice_id: speaker.voiceId,
+            language: script.language,
+            speaking_rate: settings.pace,
+          }),
+        });
+      }
+    } catch {
+      // Non-fatal: speakers sync failure shouldn't block the workflow
+    }
+  }
+
+  async function syncSegmentsToSupabase(podcastId: string, script: PodcastScript): Promise<void> {
+    if (!isAuthenticated || !user) return;
+    try {
+      const existingRes = await supabaseFetch(`/api/podcasts/${podcastId}/segments`);
+      if (existingRes.ok) {
+        const existing = await existingRes.json();
+        for (const s of existing.segments ?? []) {
+          await supabaseFetch(`/api/podcasts/${podcastId}/segments/${s.id}`, { method: "DELETE" });
+        }
+      }
+      for (const [index, segment] of script.segments.entries()) {
+        const speakerRecord = script.speakers.find((s) => s.id === segment.speaker);
+        await supabaseFetch(`/api/podcasts/${podcastId}/segments`, {
+          method: "POST",
+          body: JSON.stringify({
+            speaker_id: speakerRecord?.id ?? undefined,
+            sequence_number: index + 1,
+            heading: segment.heading,
+            dialogue: segment.text,
+            status: "pending",
+          }),
+        });
+      }
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  async function updateSupabasePodcast(podcastId: string, updates: {
+    title?: string;
+    description?: string;
+    script?: PodcastScript;
+    status?: string;
+    audio_path?: string;
+  }): Promise<void> {
+    if (!isAuthenticated || !user) return;
+    try {
+      await supabaseFetch(`/api/podcasts/${podcastId}`, {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      });
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  async function loadFromSupabase(podcastId: string): Promise<{
+    script: PodcastScript;
+    settings: PodcastSettings;
+  } | null> {
+    if (!isAuthenticated || !user) return null;
+    try {
+      const res = await supabaseFetch(`/api/podcasts/${podcastId}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const podcast = data.podcast;
+      if (!podcast) return null;
+
+      const script: PodcastScript = {
+        title: podcast.title,
+        description: podcast.description,
+        duration: podcast.duration_seconds ?? 300,
+        language: podcast.language as PodcastScript["language"],
+        speakers: (podcast.podcast_speakers as any[] | []).map((s: any) => ({
+          id: s.id,
+          name: s.speaker_name,
+          role: s.speaker_role,
+          voiceId: s.voice_id,
+        })),
+        segments: (podcast.podcast_segments as any[] | [])
+          .sort((a: any, b: any) => a.sequence_number - b.sequence_number)
+          .map((s: any) => {
+            const speakerRecord = script.speakers.find((sp) => sp.id === s.speaker_id);
+            return {
+              id: s.id,
+              heading: s.heading,
+              speaker: speakerRecord?.id ?? speakerRecord?.name ?? "host1",
+              text: s.dialogue,
+            };
+          }),
+        researchNote: "Synced from Supabase.",
+      };
+
+      const settings: PodcastSettings = {
+        sourceType: (podcast.source_type as SourceType) ?? "topic",
+        topic: podcast.original_prompt ?? script.title,
+        sourceText: podcast.original_prompt ?? "",
+        duration: (((podcast.duration_seconds ?? 300) / 60) as unknown as 2 | 5 | 10 | 15),
+        language: podcast.language as LanguageCode,
+        speakerCount: script.speakers.length as unknown as 1 | 2 | 3,
+        style: (podcast.conversation_style as PodcastStyle) ?? "casual",
+        audience: (podcast.target_audience as Audience) ?? "general",
+        depth: "standard",
+        pace: 1,
+        voiceIds: script.speakers.map((s) => s.voiceId ?? ""),
+        musicEnabled: false,
+        musicVolume: 0.16,
+      };
+
+      return { script, settings };
+    } catch {
+      return null;
+    }
+  }
 
   // One persistent audio element for the bottom player.
   React.useEffect(() => {
@@ -255,8 +459,39 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         // Storage failures should not break generation; surface gently.
         notify("info", "Episode generated but could not be saved to the local library.");
       }
+
+      // Sync to Supabase when authenticated
+      if (isAuthenticated && user) {
+        try {
+          const res = await supabaseFetch("/api/podcasts", {
+            method: "POST",
+            body: JSON.stringify({
+              title: currentScript.title,
+              description: currentScript.description,
+              language: currentScript.language,
+              status: blob ? "completed" : "script_ready",
+              script: currentScript,
+              original_prompt: currentSettings.sourceText?.slice(0, 2000) ?? currentSettings.topic,
+              source_type: currentSettings.sourceType,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const supabasePodcastId = data.podcast?.id;
+            if (supabasePodcastId) {
+              // Sync speakers and segments
+              await syncSpeakersToSupabase(supabasePodcastId, currentScript);
+              await syncSegmentsToSupabase(supabasePodcastId, currentScript);
+              // Update episodeId to Supabase ID for future syncs
+              setEpisodeId(supabasePodcastId);
+            }
+          }
+        } catch {
+          // Non-fatal: Supabase sync failure shouldn't block local workflow
+        }
+      }
     },
-    [createdAt, episodeId, notify],
+    [createdAt, episodeId, isAuthenticated, user, notify, supabaseFetch],
   );
 
   const createScript = React.useCallback(async () => {
@@ -325,6 +560,36 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       }
 
       notify("success", "Script ready. Review and edit the dialogue before generating audio.");
+
+      // Sync to Supabase when authenticated
+      if (isAuthenticated && user && episodeId) {
+        try {
+          const res = await supabaseFetch("/api/podcasts", {
+            method: "POST",
+            body: JSON.stringify({
+              title: generated.title,
+              description: generated.description,
+              language: generated.language,
+              status: "script_ready",
+              script: generated,
+              original_prompt: current.sourceText?.slice(0, 2000) ?? current.topic,
+              source_type: current.sourceType,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const supabasePodcastId = data.podcast?.id;
+            if (supabasePodcastId) {
+              await syncSpeakersToSupabase(supabasePodcastId, generated);
+              await syncSegmentsToSupabase(supabasePodcastId, generated);
+              setEpisodeId(supabasePodcastId);
+            }
+          }
+        } catch {
+          // Non-fatal
+        }
+      }
+
       if (typeof window !== "undefined") {
         window.setTimeout(() => {
           document.getElementById("episode-workspace")?.scrollIntoView({ behavior: "smooth" });
@@ -335,7 +600,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setBusyScript(false);
     }
-  }, [busyScript, createdAt, episodeId, notify, setAudio]);
+  }, [busyScript, createdAt, episodeId, isAuthenticated, user, notify, setAudio, supabaseFetch]);
 
   const regenerateScript = React.useCallback(async () => {
     if (!scriptRef.current) return;
@@ -651,6 +916,23 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     [setAudio],
   );
 
+  const loadEpisodeFromSupabase = React.useCallback(
+    async (podcastId: string) => {
+      if (!isAuthenticated || !user) return null;
+      const data = await loadFromSupabase(podcastId);
+      if (!data) return null;
+      setScript(data.script);
+      setSettings(data.settings);
+      setEpisodeId(podcastId);
+      setCreatedAt(Date.now());
+      setGeneration(initialGeneration(data.script));
+      setMusicFileState(null);
+      setAudio(null);
+      return data;
+    },
+    [isAuthenticated, user, loadFromSupabase, setAudio],
+  );
+
   const resetStudio = React.useCallback(() => {
     abortRef.current?.abort();
     cacheRef.current.clear();
@@ -705,6 +987,11 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     setPlayerState((prev) => ({ ...prev, rate }));
   }, []);
 
+  const setAuthState = React.useCallback((user: SupabaseUser | null, isAuthenticated: boolean) => {
+    setUser(user);
+    setIsAuthenticated(isAuthenticated);
+  }, []);
+
   const value: StudioContextValue = {
     settings,
     script,
@@ -718,6 +1005,10 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     busyTranslation,
     notice,
     player: playerState,
+    user,
+    isAuthenticated,
+    supabaseReady,
+    setAuthState,
     updateSettings,
     setSourceText,
     createScript,
@@ -734,6 +1025,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     cancelGeneration,
     setMusicFile,
     loadEpisode,
+    loadEpisodeFromSupabase,
     resetStudio,
     notify,
     dismissNotice,

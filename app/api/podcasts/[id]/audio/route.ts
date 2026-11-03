@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/services/auth";
 import { z } from "zod";
-import { getSignedUrl, storagePath, BUCKETS, uploadFile } from "@/lib/services/storage";
+import { getSignedUrl, uploadFile } from "@/lib/services/storage";
+import { BUCKETS, storagePath } from "@/lib/storage-path";
 
 export async function POST(
   request: Request,

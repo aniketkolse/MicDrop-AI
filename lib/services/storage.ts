@@ -2,12 +2,7 @@
 
 import { createServerClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/services/auth";
-
-const BUCKETS = {
-  audio: "podcast-audio",
-  documents: "podcast-documents",
-  covers: "podcast-covers",
-} as const;
+import { BUCKETS, storagePath } from "@/lib/storage-path";
 
 export async function ensureBuckets() {
   const supabase = await createServerClient();
@@ -52,9 +47,3 @@ export async function deleteFile(bucket: string, path: string) {
   const { error } = await supabase.storage.from(bucket).remove([path]);
   if (error) throw error;
 }
-
-export function storagePath(userId: string, podcastId: string, type: "audio" | "source" | "cover", fileName: string) {
-  return `users/${userId}/podcasts/${podcastId}/${type}/${fileName}`;
-}
-
-export { BUCKETS };
