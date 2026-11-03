@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect } from "vitest";
 import { encodeWav } from "@/lib/audio-export";
 
-// jsdom doesn't have AudioBuffer; mock it for WAV encoder tests
-beforeAll(() => {
+// Mock AudioBuffer for jsdom compatibility
+beforeAllSetup();
+
+function beforeAllSetup() {
   const channels = new Map();
   (globalThis as any).AudioBuffer = class AudioBuffer {
     numberOfChannels: number;
@@ -30,7 +32,7 @@ beforeAll(() => {
       this._channels[channel].set(source, start);
     }
   };
-});
+}
 
 describe("audio-export", () => {
   it("encodes a silent mono buffer to valid WAV", async () => {
@@ -47,16 +49,12 @@ describe("audio-export", () => {
 
     const blob = encodeWav(buffer);
     expect(blob.type).toBe("audio/wav");
-    expect(blob.size).toBeGreaterThan(44); // at least the header
+    expect(blob.size).toBeGreaterThan(44);
 
     const array = new Uint8Array(await blob.arrayBuffer());
-    // RIFF header
     expect(String.fromCharCode(...array.slice(0, 4))).toBe("RIFF");
-    // WAVE marker
     expect(String.fromCharCode(...array.slice(8, 12))).toBe("WAVE");
-    // fmt chunk
     expect(String.fromCharCode(...array.slice(12, 16))).toBe("fmt ");
-    // data chunk
     expect(String.fromCharCode(...array.slice(36, 40))).toBe("data");
   });
 
@@ -68,5 +66,24 @@ describe("audio-export", () => {
     });
     const blob = encodeWav(buffer);
     expect(blob.type).toBe("audio/wav");
+  });
+
+  it("encodes audio with actual samples", () => {
+    const sampleRate = 22050;
+    const length = sampleRate;
+    const buffer = new AudioBuffer({
+      numberOfChannels: 1,
+      length,
+      sampleRate,
+    });
+    const channel = buffer.getChannelData(0);
+    // Generate a sine wave
+    for (let i = 0; i < length; i++) {
+      channel[i] = Math.sin((2 * Math.PI * 440 * i) / sampleRate) * 0.5;
+    }
+
+    const blob = encodeWav(buffer);
+    expect(blob.type).toBe("audio/wav");
+    expect(blob.size).toBe(44 + length * 2); // header + 16-bit samples
   });
 });
