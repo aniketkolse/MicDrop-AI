@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #101014;
+  --surface: #18181f;
+  --surface-secondary: #202029;
+  --primary: #a78bfa;
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1aa;
+  --border: #30303a;
+  --success: #34d399;
+  --error: #f87171;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(167, 139, 250, 0.28);
+  color: #fff;
+}
+
+/* Subtle studio glow, not a decorative gradient wash. */
+.app-canvas {
+  background:
+    radial-gradient(900px 380px at 20% -10%, rgba(167, 139, 250, 0.07), transparent 65%),
+    radial-gradient(700px 300px at 90% 0%, rgba(103, 232, 249, 0.035), transparent 60%),
+    var(--background);
+}
+
+.surface-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c2c36;
+  border-radius: 999px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a46;
+}
+
+input[type="range"] {
+  outline: none;
+}
+
+/* Equalizer motif used sparingly in the brand and player. */
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq 1.2s ease-in-out infinite;
+}
+.eq-bar:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.eq-bar:nth-child(3) {
+  animation-delay: 0.34s;
+}
+.eq-bar:nth-child(4) {
+  animation-delay: 0.08s;
+}
+.eq-bar:nth-child(5) {
+  animation-delay: 0.26s;
+}
+
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.32);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
