@@ -4,7 +4,23 @@ import {
 } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+function isConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return Boolean(
+    url &&
+      key &&
+      !url.includes("your_supabase") &&
+      !key.includes("your_supabase") &&
+      /^https?:\/\//i.test(url),
+  );
+}
+
 export async function createServerClient(): Promise<any> {
+  if (!isConfigured()) {
+    return null;
+  }
+
   const cookieStore = await cookies();
   return createSupabaseServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

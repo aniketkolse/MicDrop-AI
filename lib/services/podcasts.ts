@@ -3,14 +3,22 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function getUser() {
+async function withSupabase<T>(fn: (supabase: any) => Promise<T | null>): Promise<T | null> {
   const supabase = await createServerClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user;
+  if (!supabase) return null;
+  return fn(supabase);
+}
+
+export async function getUser() {
+  return withSupabase(async (supabase) => {
+    const { data } = await supabase.auth.getUser();
+    return data.user;
+  });
 }
 
 export async function signOut() {
   const supabase = await createServerClient();
+  if (!supabase) return;
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
 }
@@ -23,6 +31,7 @@ export async function createPodcastRecord(values: {
   script?: unknown;
 }) {
   const supabase = await createServerClient();
+  if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
   const user = await getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -43,19 +52,22 @@ export async function createPodcastRecord(values: {
 }
 
 export async function listPodcasts() {
-  const supabase = await createServerClient();
-  const user = await getUser();
-  if (!user) return [];
-  const { data, error } = await supabase
-    .from("podcasts")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return withSupabase(async (supabase) => {
+    const user = await getUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from("podcasts")
+      .select("*, podcast_speakers(*), podcast_segments(*)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  });
 }
 
 export async function updatePodcast(id: string, values: Record<string, unknown>) {
   const supabase = await createServerClient();
+  if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
   const { data, error } = await supabase
     .from("podcasts")
     .update({ ...values, updated_at: new Date().toISOString() })
@@ -69,6 +81,7 @@ export async function updatePodcast(id: string, values: Record<string, unknown>)
 
 export async function deletePodcast(id: string) {
   const supabase = await createServerClient();
+  if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
   const { error } = await supabase.from("podcasts").delete().eq("id", id);
   if (error) throw error;
   revalidatePath("/episodes");

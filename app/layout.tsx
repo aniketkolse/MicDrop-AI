@@ -15,17 +15,17 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "MicDrop AI — Podcast Studio",
   description:
-    "Turn a topic or document into an editable, multilingual, multi-speaker podcast with real Sarvam AI voices.",
+    "Turn a topic or document into an elegant, multilingual, multi-speaker podcast with real Sarvam AI voices.",
   applicationName: "MicDrop AI",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F]">
+      <body className="min-h-screen bg-[#FAFAF9] text-[#1C1917]">
         <StudioProvider>
           <Sidebar />
-          <main className="min-h-screen lg:pl-[260px]">{children}</main>
+          <main className="min-h-screen lg:pl-[272px]">{children}</main>
           <AudioPlayer />
           <Toast />
         </StudioProvider>
