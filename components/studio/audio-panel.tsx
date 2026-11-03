@@ -67,7 +67,11 @@ export function AudioPanel() {
   const done = generation.segments.filter((segment) => segment.status === "done").length;
   const failed = generation.segments.filter((segment) => segment.status === "failed");
   const percent =
-    generation.total > 0 ? Math.round((done / generation.total) * 100) : generation.phase === "done" ? 100 : 0;
+    generation.total > 0
+      ? Math.round((done / generation.total) * 100)
+      : generation.phase === "done"
+        ? 100
+        : 0;
 
   const toggleMusicPreview = () => {
     if (!musicFile) return;
@@ -91,26 +95,28 @@ export function AudioPanel() {
   };
 
   return (
-    <section className="rounded-xl border border-border bg-surface xl:sticky xl:top-6 xl:self-start">
-      <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[10px] font-medium tracking-[0.18em] text-[#6D6D7B]">04</span>
-          <h2 className="text-[13.5px] font-semibold text-text-primary">Voice production</h2>
+    <section className="rounded-xl border border-input bg-card shadow xl:sticky xl:top-6 xl:self-start">
+      <div className="flex items-center justify-between border-b border-accent px-5 py-4">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+            4
+          </span>
+          <h2 className="text-sm font-semibold text-foreground">Voice production</h2>
         </div>
-        <Badge tone="primary">{language.model}</Badge>
+        <Badge tone="primary" size="sm">{language.model}</Badge>
       </div>
 
-      <div className="space-y-4 p-5">
-        <div className="rounded-lg border border-border bg-[#141419] p-3">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6D6D7B]">
+      <div className="space-y-5 p-5">
+        <div className="rounded-lg border border-input bg-secondary p-3">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">
             Casting
           </span>
           <div className="mt-2.5 space-y-2">
             {script.speakers.map((speaker, index) => {
               const selected = speaker.voiceId ?? settings.voiceIds[index] ?? language.voices[0]?.id;
               return (
-                <div key={speaker.id} className="flex items-center gap-1.5">
-                  <span className="w-14 shrink-0 truncate text-[10.5px] text-[#7E7E8D]">
+                <div key={speaker.id} className="flex items-center gap-2">
+                  <span className="w-14 shrink-0 truncate text-[10.5px] text-muted-foreground">
                     {speaker.name}
                   </span>
                   <Select
@@ -132,9 +138,9 @@ export function AudioPanel() {
         </div>
 
         {/* Background music */}
-        <div className="rounded-lg border border-border bg-[#141419] p-3">
+        <div className="rounded-lg border border-input bg-secondary p-3">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6D6D7B]">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">
               <Music2 className="h-3 w-3" /> Background music
             </span>
             <Switch
@@ -154,15 +160,15 @@ export function AudioPanel() {
 
           {musicFile ? (
             <>
-              <div className="mt-2.5 flex items-center gap-2 rounded-md border border-border bg-[#1A1A22] px-2.5 py-2">
+              <div className="mt-2.5 flex items-center gap-2 rounded-md border border-input bg-accent px-2.5 py-2">
                 <Music2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                <span className="min-w-0 flex-1 truncate text-[10.5px] text-text-secondary">
+                <span className="min-w-0 flex-1 truncate text-[10.5px] text-muted-foreground">
                   {musicFile.name}
                 </span>
                 <button
                   type="button"
                   onClick={toggleMusicPreview}
-                  className="flex h-6 w-6 items-center justify-center rounded text-text-secondary hover:text-primary"
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-primary"
                   aria-label="Preview music"
                 >
                   {musicPreviewing ? (
@@ -174,7 +180,7 @@ export function AudioPanel() {
                 <button
                   type="button"
                   onClick={() => setMusicFile(null)}
-                  className="flex h-6 w-6 items-center justify-center rounded text-text-secondary hover:text-error"
+                  className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-destructive"
                   aria-label="Remove music"
                 >
                   <XCircle className="h-3.5 w-3.5" />
@@ -192,7 +198,7 @@ export function AudioPanel() {
               </div>
             </>
           ) : (
-            <label className="mt-2.5 flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-[#35353F] py-2 text-[10.5px] text-[#6F6F7D] hover:border-[#4A4560] hover:text-primary">
+            <label className="mt-2.5 flex cursor-pointer items-center justify-center gap-1.5 rounded-md border border-dashed border-input py-2 text-[10.5px] text-muted-foreground hover:border-ring hover:text-primary">
               <Upload className="h-3 w-3" />
               Upload MP3 / WAV (20 MB)
               <input
@@ -207,15 +213,15 @@ export function AudioPanel() {
               />
             </label>
           )}
-          <p className="mt-2 text-[9.5px] leading-relaxed text-[#5E5E6B]">
+          <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
             Mixed in your browser with Web Audio. Use music you have rights to.
           </p>
         </div>
 
         {generation.total > 0 ? (
-          <div className="rounded-lg border border-border bg-[#141419] p-3">
+          <div className="rounded-lg border border-input bg-secondary p-3">
             <div className="flex items-center justify-between text-[10.5px]">
-              <span className="text-text-secondary">
+              <span className="text-muted-foreground">
                 {generation.phase === "done"
                   ? "Render complete"
                   : generation.phase === "mixing"
@@ -226,13 +232,13 @@ export function AudioPanel() {
                         ? `Rendering ${Math.min(done + 1, generation.total)} of ${generation.total}`
                         : "Render paused"}
               </span>
-              <span className="tabular-nums text-[#7E7E8D]">{percent}%</span>
+              <span className="tabular-nums text-muted-foreground">{percent}%</span>
             </div>
-            <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#292933]">
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-accent/40">
               <div
                 className={cn(
                   "h-full rounded-full transition-[width] duration-300",
-                  generation.phase === "error" ? "bg-error" : "bg-primary",
+                  generation.phase === "error" ? "bg-destructive" : "bg-primary",
                 )}
                 style={{ width: `${percent}%` }}
               />
@@ -248,23 +254,23 @@ export function AudioPanel() {
                     className="flex items-center gap-2 rounded px-1 py-0.5 text-[10px]"
                   >
                     {segment.status === "done" ? (
-                      <CheckCircle2 className="h-3 w-3 shrink-0 text-success" />
+                      <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />
                     ) : segment.status === "generating" ? (
                       <Loader2 className="h-3 w-3 shrink-0 animate-spin text-primary" />
                     ) : segment.status === "failed" ? (
-                      <AlertCircle className="h-3 w-3 shrink-0 text-error" />
+                      <AlertCircle className="h-3 w-3 shrink-0 text-destructive" />
                     ) : (
-                      <Circle className="h-2.5 w-2.5 shrink-0 text-[#4A4A56]" />
+                      <Circle className="h-2.5 w-2.5 shrink-0 text-muted-foreground/40" />
                     )}
-                    <span className="w-4 shrink-0 tabular-nums text-[#5F5F6C]">
+                    <span className="w-4 shrink-0 tabular-nums text-muted-foreground">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[#8B8B99]">{data.heading}</span>
+                    <span className="min-w-0 flex-1 truncate text-muted-foreground">{data.heading}</span>
                     {segment.status === "failed" ? (
                       <button
                         type="button"
                         onClick={() => void regenerateSegmentAudio(index)}
-                        className="shrink-0 text-error hover:underline"
+                        className="shrink-0 text-destructive hover:underline"
                       >
                         Retry
                       </button>
@@ -275,7 +281,7 @@ export function AudioPanel() {
                         onClick={() => void regenerateSegmentAudio(index)}
                         title="Re-render this turn"
                         aria-label={`Re-render ${data.heading}`}
-                        className="shrink-0 text-[#5E5E6B] transition-colors hover:text-primary disabled:opacity-30"
+                        className="shrink-0 text-muted-foreground transition-colors duration-150 hover:text-primary disabled:opacity-30"
                       >
                         <RefreshCw className="h-2.5 w-2.5" />
                       </button>
@@ -286,7 +292,7 @@ export function AudioPanel() {
             </div>
 
             {generation.error ? (
-              <p className="mt-2 rounded border border-[#5B2B33] bg-[#241A1D] px-2 py-1.5 text-[10px] leading-relaxed text-[#E3A2A9]">
+              <p className="mt-2 rounded border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-[10px] leading-relaxed text-destructive">
                 {generation.error}
               </p>
             ) : null}
@@ -313,26 +319,26 @@ export function AudioPanel() {
               </>
             )}
           </Button>
-          <p className="text-center text-[9.5px] leading-relaxed text-[#5E5E6B]">
+          <p className="text-center text-[10px] leading-relaxed text-muted-foreground">
             Bulbul renders each turn separately. Completed turns are cached, so a retry only
             re-renders what failed.
           </p>
         </div>
 
         {audioUrl && audioBlob ? (
-          <div className="rounded-lg border border-[#245844] bg-[#14231D] p-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-medium text-success">
+          <div className="rounded-lg border border-green-500/30 bg-green-50/40 p-3">
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-green-600">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Episode audio ready
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-[10px] text-[#8CB7A8]">
+            <div className="mt-1.5 flex items-center justify-between text-[10px] text-green-500">
               <span>{formatTime(script.duration)} planned</span>
               <span>{readableBytes(audioBlob.size)} WAV</span>
             </div>
             <a
               href={audioUrl}
               download={`${script.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.wav`}
-              className="mt-2.5 flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-[#2E6B53] bg-[#1A3328] text-[11px] font-medium text-[#9BE3C9] hover:bg-[#204031]"
+              className="mt-2.5 flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-green-500/50 bg-green-50/60 text-[11px] font-medium text-green-600 hover:bg-green-100/60"
             >
               <Download className="h-3 w-3" />
               Download WAV
@@ -340,9 +346,9 @@ export function AudioPanel() {
           </div>
         ) : null}
 
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-[#141419] px-3 py-2">
-          <Volume2 className="h-3.5 w-3.5 text-[#7E7E8D]" />
-          <span className="text-[10px] leading-snug text-[#6F6F7D]">
+        <div className="flex items-center gap-2 rounded-lg border border-input bg-secondary px-3 py-2">
+          <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[10px] leading-snug text-muted-foreground">
             {done > 0
               ? `${done} of ${generation.total} turns rendered · ${failed.length} failed`
               : "Every button performs a real Sarvam request."}

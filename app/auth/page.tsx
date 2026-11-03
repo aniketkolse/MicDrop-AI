@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { signUp, signIn } from "@/lib/services/auth";
 import { Input, Button } from "@/components/ui";
 import { Sparkles, Mail, Lock, ArrowRight, ChevronLeft } from "lucide-react";
+import { useStudio } from "@/components/studio-provider";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,6 +15,7 @@ function cn(...inputs: ClassValue[]) {
 
 export default function AuthPage() {
   const router = useRouter();
+  const { setAuthState } = useStudio();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [displayName, setDisplayName] = React.useState("");
@@ -28,9 +30,15 @@ export default function AuthPage() {
       setLoading(true);
       try {
         if (mode === "login") {
-          await signIn(email, password);
+          const { data } = await signIn(email, password);
+          if (data?.user) {
+            setAuthState({ id: data.user.id, email: data.user.email }, true);
+          }
         } else {
-          await signUp(email, password, displayName || undefined);
+          const { data } = await signUp(email, password, displayName || undefined);
+          if (data?.user) {
+            setAuthState({ id: data.user.id, email: data.user.email }, true);
+          }
         }
         router.push("/dashboard");
       } catch (err: any) {
@@ -39,7 +47,7 @@ export default function AuthPage() {
         setLoading(false);
       }
     },
-    [email, password, displayName, mode, router],
+    [email, password, displayName, mode, router, setAuthState],
   );
 
   const handleBack = () => router.push("/");

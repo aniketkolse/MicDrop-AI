@@ -6,12 +6,6 @@ import { useStudio } from "@/components/studio-provider";
 import { Badge, Button, Select, Textarea } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-const AVATAR_TONES = [
-  "border-[#4B3D6E] bg-[#2A223C] text-[#C4B5FD]",
-  "border-[#2E5560] bg-[#172C31] text-[#7DD3E8]",
-  "border-[#5A4526] bg-[#2C2314] text-[#E5B567]",
-];
-
 function initials(name: string): string {
   return name
     .split(/\s+/)
@@ -47,21 +41,20 @@ export function ScriptEditor() {
   };
 
   return (
-    <section className="rounded-xl border border-border bg-surface">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[10px] font-medium tracking-[0.18em] text-[#6D6D7B]">03</span>
-          <h2 className="text-[13.5px] font-semibold text-text-primary">Script editor</h2>
-          <Badge tone="neutral">{script.segments.length} turns</Badge>
-          <Badge tone="neutral">{words.toLocaleString()} words</Badge>
+    <section className="rounded-xl border border-input bg-card shadow">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-accent px-5 py-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Script editor</h2>
+          <Badge tone="neutral" size="sm">{script.segments.length} turns</Badge>
+          <Badge tone="neutral" size="sm">{words.toLocaleString()} words</Badge>
         </div>
-        <Button size="sm" variant="secondary" onClick={addSegment}>
+        <Button size="sm" variant="outline" onClick={addSegment}>
           <MessageSquarePlus className="h-3.5 w-3.5" />
           Add turn
         </Button>
       </div>
 
-      <div className="space-y-3 p-4">
+      <div className="divide-y divide-accent px-4 py-4 space-y-2">
         {script.segments.map((segment, index) => {
           const speakerIndex = Math.max(
             0,
@@ -75,23 +68,20 @@ export function ScriptEditor() {
             <article
               key={segment.id}
               className={cn(
-                "group rounded-xl border bg-[#15151B] transition-colors",
-                editing ? "border-[#4C4468]" : "border-[#2A2A34] hover:border-[#3A3A46]",
+                "group rounded-lg border border-transparent px-3 py-2.5 transition-colors duration-150 hover:bg-accent/30",
+                editing ? "border-ring" : "focus-within:border-ring",
               )}
             >
-              <div className="flex flex-wrap items-center gap-2.5 border-b border-[#24242D] px-3.5 py-2.5">
+              <div className="flex flex-wrap items-center gap-2.5 border-b border-accent px-1 pb-2.5 mb-2.5">
                 <span
-                  className={cn(
-                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold",
-                    AVATAR_TONES[speakerIndex % AVATAR_TONES.length],
-                  )}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-semibold border border-primary/20"
                 >
                   {initials(speaker?.name ?? "Host")}
                 </span>
                 <Select
                   value={segment.speaker}
                   onChange={(event) => updateSegment(segment.id, { speaker: event.target.value })}
-                  className="h-7 w-[118px] border-transparent bg-transparent px-1 text-[11.5px] hover:border-border"
+                  className="h-7 w-[130px] border-transparent bg-transparent px-1 text-[11.5px] hover:border-border"
                 >
                   {script.speakers.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -104,27 +94,27 @@ export function ScriptEditor() {
                   <input
                     value={draftHeading}
                     onChange={(event) => setDraftHeading(event.target.value)}
-                    className="h-7 min-w-[120px] flex-1 rounded-md border border-border bg-[#131318] px-2 text-[11.5px] text-text-primary outline-none focus:border-[#57506F]"
+                    className="h-7 min-w-[120px] flex-1 rounded-md border border-input bg-transparent px-2 text-[11.5px] text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
                     placeholder="Segment heading"
                     maxLength={120}
                   />
                 ) : (
-                  <span className="min-w-0 flex-1 truncate text-[11.5px] text-[#8B8B99]">
+                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                     {segment.heading}
                   </span>
                 )}
 
-                <span className="text-[10px] tabular-nums text-[#5F5F6C]">
+                <span className="text-[10px] tabular-nums text-muted-foreground">
                   {segment.text.length.toLocaleString()} chars
                 </span>
 
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
                   {editing ? (
                     <>
                       <button
                         type="button"
                         onClick={() => save(segment.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-success hover:bg-[#1B2B24]"
+                        className="flex h-7 w-7 items-center justify-center rounded-md bg-green-500/10 text-green-600 hover:bg-green-500/20"
                         aria-label="Save changes"
                       >
                         <Check className="h-3.5 w-3.5" />
@@ -132,7 +122,7 @@ export function ScriptEditor() {
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-text-secondary hover:bg-surface-2"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/50"
                         aria-label="Cancel editing"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -147,7 +137,7 @@ export function ScriptEditor() {
                           await regenerateSegmentText(segment.id);
                           setRewritingId(null);
                         }}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-[#7E7E8D] hover:bg-surface-2 hover:text-primary disabled:opacity-40"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-primary disabled:opacity-40"
                         aria-label="Rewrite with AI"
                         title="Rewrite this turn with Sarvam-105B"
                         disabled={rewriting}
@@ -157,7 +147,7 @@ export function ScriptEditor() {
                       <button
                         type="button"
                         onClick={() => startEditing(segment.id, segment.text, segment.heading)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-[#7E7E8D] hover:bg-surface-2 hover:text-text-primary"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent/50 hover:text-primary"
                         aria-label="Edit segment"
                       >
                         <Pencil className="h-3.5 w-3.5" />
@@ -165,7 +155,7 @@ export function ScriptEditor() {
                       <button
                         type="button"
                         onClick={() => removeSegment(segment.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-[#7E7E8D] hover:bg-[#2A191D] hover:text-error"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
                         aria-label="Delete segment"
                         disabled={script.segments.length <= 1}
                       >
@@ -176,7 +166,7 @@ export function ScriptEditor() {
                 </div>
               </div>
 
-              <div className="px-4 py-3.5">
+              <div className="px-1 py-2.5">
                 {editing ? (
                   <>
                     <Textarea
@@ -184,10 +174,10 @@ export function ScriptEditor() {
                       onChange={(event) => setDraft(event.target.value)}
                       rows={4}
                       maxLength={4000}
-                      className="min-h-[92px] border-[#353542] bg-[#111116] text-[13px] leading-7"
+                      className="min-h-[92px] border border-input bg-transparent text-[13px] leading-7 outline-none focus:border-ring focus:ring-1 focus:ring-ring"
                     />
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-[10px] text-[#5F5F6C]">{draft.length} / 4,000</span>
+                      <span className="text-[10px] text-muted-foreground">{draft.length} / 4,000</span>
                       <div className="flex gap-2">
                         <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
                           Cancel
@@ -199,9 +189,9 @@ export function ScriptEditor() {
                     </div>
                   </>
                 ) : (
-                  <p className="whitespace-pre-wrap text-[13px] leading-7 text-[#D4D4DE]">
+                  <p className="whitespace-pre-wrap text-sm leading-7 text-foreground">
                     {segment.text || (
-                      <span className="italic text-[#616170]">
+                      <span className="italic text-muted-foreground">
                         Empty turn — edit to add dialogue.
                       </span>
                     )}
@@ -211,16 +201,16 @@ export function ScriptEditor() {
             </article>
           );
         })}
-
-        <button
-          type="button"
-          onClick={addSegment}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#35353F] py-3 text-[11.5px] text-[#6F6F7D] transition-colors hover:border-[#4A4560] hover:text-primary"
-        >
-          <MessageSquarePlus className="h-3.5 w-3.5" />
-          Add another turn
-        </button>
       </div>
+
+      <button
+        type="button"
+        onClick={addSegment}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-input py-3 text-[11px] text-muted-foreground transition-colors duration-150 hover:border-ring hover:text-primary"
+      >
+        <MessageSquarePlus className="h-3.5 w-3.5" />
+        Add another turn
+      </button>
     </section>
   );
 }

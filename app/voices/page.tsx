@@ -18,50 +18,52 @@ export default function VoicesPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1120px] px-4 py-6 lg:px-9 lg:py-8">
-      <header>
-        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#6F6F7D]">
+    <div className="mx-auto max-w-[1000px] px-6 py-10 lg:px-9">
+      <header className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          Voice catalogue
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">
+            Voice catalogue
+          </span>
         </div>
-        <h1 className="mt-2.5 font-display text-[36px] leading-none text-text-primary sm:text-[42px]">
+        <h1 className="text-balance font-display text-[32px] leading-[1.12] text-foreground sm:text-[40px]">
           Voice studio
         </h1>
-        <p className="mt-2 max-w-2xl text-[12px] leading-relaxed text-text-secondary">
+        <p className="mt-2 max-w-2xl text-lg text-muted-foreground leading-relaxed">
           Every voice below comes from Sarvam Bulbul&apos;s official catalogue. Preview a real
           generated sample before casting it in an episode.
         </p>
       </header>
 
-      <div className="mt-6 flex gap-1.5 overflow-x-auto pb-1">
+      <div className="mt-6 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
         {LANGUAGES.map((option) => (
           <button
             key={option.code}
             type="button"
             onClick={() => setLanguageCode(option.code)}
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11.5px] transition-colors",
+              "flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-medium transition-colors duration-150",
               languageCode === option.code
-                ? "border-[#4A4266] bg-[#241F33] text-text-primary"
-                : "border-border bg-surface text-[#8B8B99] hover:border-[#414150] hover:text-text-primary",
+                ? "border-ring bg-primary/10 text-foreground"
+                : "border-input bg-secondary text-muted-foreground hover:border-ring hover:text-foreground",
             )}
           >
             {option.label}
-            <span className="text-[10px] text-[#6B6B7A]">{option.native}</span>
+            <span className="text-[10px] text-muted-foreground">{option.native}</span>
           </button>
         ))}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-input bg-secondary px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#3A3450] bg-[#221D30] text-primary">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-input bg-card text-primary">
             <Mic2 className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-[12px] font-medium text-text-primary">
+            <p className="text-sm font-medium text-foreground">
               {language.label} · {voices.length} curated voice{voices.length === 1 ? "" : "s"}
             </p>
-            <p className="text-[10px] text-[#777785]">
+            <p className="text-[11px] text-muted-foreground">
               Model {language.model} · official speaker IDs, never invented
             </p>
           </div>
@@ -79,7 +81,7 @@ export default function VoicesPage() {
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-6">
         {voices.length === 0 ? (
           <EmptyState
             icon={<AudioLines className="h-5 w-5" />}
@@ -87,33 +89,29 @@ export default function VoicesPage() {
             description="This language catalogue has no voices in the selected category yet. Switch to All."
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {voices.map((voice) => (
               <article
                 key={voice.id}
-                className="flex flex-col rounded-xl border border-border bg-surface p-4 transition-colors hover:border-[#3E3E4A]"
+                className="flex flex-col rounded-xl border border-input bg-card shadow hover:shadow-sm transition-colors duration-150"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between p-5">
                   <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#3A3450] bg-[#241F33] text-[11px] font-semibold text-primary">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary text-[11px] font-semibold border border-primary/20">
                       {voice.name.slice(0, 2).toUpperCase()}
                     </span>
                     <div>
-                      <p className="text-[12.5px] font-medium text-text-primary">{voice.name}</p>
-                      <p className="text-[10px] capitalize text-[#777785]">
+                      <p className="text-sm font-medium text-foreground">{voice.name}</p>
+                      <p className="text-[11px] capitalize text-muted-foreground">
                         {voice.gender} · {voice.style}
                       </p>
                     </div>
                   </div>
-                  <Badge tone="neutral">{language.code}</Badge>
+                  <Badge tone="neutral" size="sm">{language.code}</Badge>
                 </div>
 
-                <code className="mt-3 block truncate rounded-md border border-[#2A2A34] bg-[#131318] px-2 py-1.5 font-mono text-[9.5px] text-[#8C8C9B]">
-                  {voice.id}
-                </code>
-
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="flex items-center gap-1 text-[9.5px] text-[#5E5E6B]">
+                <div className="border-t border-accent px-5 py-4 flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                     <Sparkles className="h-2.5 w-2.5" />
                     Real Bulbul sample
                   </span>
@@ -124,13 +122,19 @@ export default function VoicesPage() {
                     label={`Preview ${voice.name}`}
                   />
                 </div>
+
+                <div className="border-t border-accent px-5 pt-3 pb-4">
+                  <code className="block truncate rounded-md border border-input bg-secondary px-2.5 py-2 font-mono text-[10px] text-muted-foreground">
+                    {voice.id}
+                  </code>
+                </div>
               </article>
             ))}
           </div>
         )}
       </div>
 
-      <p className="mt-6 text-[10px] leading-relaxed text-[#5E5E6B]">
+      <p className="mt-8 text-[11px] leading-relaxed text-muted-foreground">
         The v4 Flash catalogue publishes 222 persona voices across Hindi, English, English–Hindi,
         Bengali, Gujarati, Kannada, Marathi, Punjabi, Tamil and Telugu. Malayalam routes to Bulbul
         v3, which documents that language. Previews are generated live and consume Sarvam credits.

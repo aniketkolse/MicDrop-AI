@@ -1,71 +1,95 @@
 "use client";
 
-import { AudioLines, ListMusic, Mic2 } from "lucide-react";
+import Link from "next/link";
+import { ListMusic, Sparkles, Mic2, AudioLines } from "lucide-react";
 import { useStudio } from "@/components/studio-provider";
 import { CreateWorkspace } from "@/components/studio/create-workspace";
 import { EpisodeWorkspace } from "@/components/studio/episode-workspace";
+import { Button } from "@/components/ui";
 
 export default function StudioPage() {
-  const { script } = useStudio();
+  const { script, episodeId } = useStudio();
 
   return (
-    <div className="mx-auto max-w-[1240px] px-4 py-6 lg:px-9 lg:py-8">
+    <div className="mx-auto max-w-[1240px] px-6 py-10 lg:px-9 lg:py-14">
       {!script ? (
         <>
-          <header className="mb-7 flex flex-wrap items-end justify-between gap-5">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#6F6F7D]">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                AI podcast studio
-              </div>
-              <h1 className="mt-3 font-display text-[38px] leading-[1.02] text-text-primary sm:text-[48px]">
-                Turn a thought into
-                <br className="hidden sm:block" /> a show.
-              </h1>
-              <p className="mt-3 max-w-xl text-[12.5px] leading-relaxed text-text-secondary">
-                Give MicDrop a topic or a document. Sarvam writes a real conversation, cast it with
-                Indian-language voices, and produce a downloadable episode — in minutes.
-              </p>
+          <header className="mb-12">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">
+                MicDrop studio
+              </span>
             </div>
-
-            <div className="hidden w-full max-w-[300px] rounded-xl border border-border bg-surface p-4 md:block">
-              <div className="flex items-center justify-between">
-                <span className="text-[9.5px] font-semibold uppercase tracking-[0.18em] text-[#6D6D7B]">
-                  Studio signal
-                </span>
-                <span className="flex items-center gap-1 text-[9.5px] text-success">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success" /> ready
-                </span>
-              </div>
-              <div className="mt-3 flex h-8 items-end gap-[3px]">
-                {[0.35, 0.6, 0.9, 0.5, 0.75, 1, 0.45, 0.8, 0.6, 0.95, 0.4, 0.7, 0.55, 0.85, 0.3].map(
-                  (height, index) => (
-                    <span
-                      key={index}
-                      className="w-full rounded-sm bg-[#3B334F]"
-                      style={{ height: `${height * 100}%` }}
-                    />
-                  ),
-                )}
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-[9.5px] text-[#6F6F7D]">
-                <span className="flex items-center gap-1">
-                  <ListMusic className="h-3 w-3" /> script
-                </span>
-                <span className="flex items-center gap-1">
-                  <Mic2 className="h-3 w-3" /> voices
-                </span>
-                <span className="flex items-center gap-1">
-                  <AudioLines className="h-3 w-3" /> WAV
-                </span>
-              </div>
+            <h1 className="text-balance font-display text-[44px] leading-[1.05] text-foreground sm:text-[56px] lg:text-[64px]">
+              Your next podcast starts here.
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg text-muted-foreground leading-relaxed">
+              Turn a topic, prompt, or document into an editable, multilingual, multi-speaker
+              episode with real voices — then render a downloadable WAV in the browser.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link href="/dashboard/create">
+                <Button size="lg" className="w-auto">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Create a podcast
+                </Button>
+              </Link>
+              <Link href="/episodes">
+                <Button variant="ghost" size="lg" className="w-auto">
+                  <ListMusic className="h-4 w-4" />
+                  Explore your library
+                </Button>
+              </Link>
             </div>
           </header>
+
+          {episodeId ? (
+            <EpisodeWorkspace />
+          ) : (
+            <section className="mt-12 border-t border-accent pt-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">
+                    Your episodes
+                  </span>
+                </div>
+                <Link href="/episodes" className="text-sm font-medium text-primary hover:underline">
+                  View all →
+                </Link>
+              </div>
+              <EmptyEpisodes />
+            </section>
+          )}
+
           <CreateWorkspace />
         </>
       ) : (
         <EpisodeWorkspace />
       )}
+    </div>
+  );
+}
+
+function EmptyEpisodes() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border border-accent/40 bg-secondary/30 p-16 text-center">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-card text-primary shadow-sm">
+        <AudioLines className="h-6 w-6" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground">No episodes yet</h3>
+      <p className="mt-2 max-w-sm text-muted-foreground text-sm leading-relaxed">
+        Create your first episode and it will appear here. Your audio never leaves this device.
+      </p>
+      <div className="mt-8">
+        <Link href="/dashboard/create">
+          <Button size="sm">
+            <Sparkles className="h-3.5 w-3.5 mr-2" />
+            Create your first podcast
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

@@ -22,10 +22,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-[#FAFAF9] text-[#1C1917]">
+      <body className="min-h-screen bg-background text-foreground antialiased">
         <StudioProvider>
           <Sidebar />
-          <main className="min-h-screen lg:pl-[272px]">{children}</main>
+          <main className="min-h-screen lg:pl-72">{children}</main>
           <AudioPlayer />
           <Toast />
         </StudioProvider>

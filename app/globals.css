@@ -2,61 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 
 @layer base {
   :root {
-    --background: #FAFAF9;
-    --foreground: #1C1917;
+    /* Backgrounds — Apple-inspired light studio */
+    --background: #F5F5F7;
+    --foreground: #1D1D1F;
     --card: #FFFFFF;
-    --card-foreground: #1C1917;
+    --card-foreground: #1D1D1F;
     --popover: #FFFFFF;
-    --popover-foreground: #1C1917;
-    --primary: #7C3AED;
+    --popover-foreground: #1D1D1F;
+
+    /* Primary — restrained MicDrop blue accent */
+    --primary: #0A66C2;
     --primary-foreground: #FFFFFF;
-    --secondary: #F5F5F4;
-    --secondary-foreground: #1C1917;
-    --muted: #F3F4F6;
-    --muted-foreground: #78716C;
-    --accent: #EAE8E5;
-    --accent-foreground: #1C1917;
-    --destructive: #DC2626;
+
+    /* Secondary surfaces */
+    --secondary: #F2F2F7;
+    --secondary-foreground: #1D1D1F;
+
+    --muted: #F2F2F7;
+    --muted-foreground: #6E6E73;
+
+    --accent: #D1D1D6;
+    --accent-foreground: #1D1D1F;
+
+    --destructive: #FF3B30;
     --destructive-foreground: #FFFFFF;
-    --border: #E7E5E4;
-    --input: #E7E5E4;
-    --ring: #7C3AED;
-    --radius: 0.75rem;
-    --radius-sm: 0.5rem;
-    --radius-lg: 1rem;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --luxury-gold: #C5A059;
-    --luxury-ink: #1C1917;
-    --luxury-paper: #FAFAF9;
-    --luxury-stone: #78716C;
+
+    --border: #D2D2D7;
+    --input: #D2D2D7;
+    --ring: #0A66C2;
+
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+
+    /* Depth — shadows carry offset + soft blur, zero-offset halos are decoration */
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow: 0 10px 30px -10px rgb(0 0 0 / 0.06), 0 2px 8px -2px rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 20px 40px -20px rgb(0 0 0 / 0.08), 0 4px 12px -4px rgb(0 0 0 / 0.04);
   }
 
   .dark {
-    --background: #0A0A09;
-    --foreground: #F5F5F4;
-    --card: #0A0A09;
-    --card-foreground: #F5F5F4;
-    --popover: #0A0A09;
-    --popover-foreground: #F5F5F4;
-    --primary: #A78BFA;
-    --primary-foreground: #1C1917;
-    --secondary: #171716;
-    --secondary-foreground: #F5F5F4;
-    --muted: #141413;
-    --muted-foreground: #A8A29E;
-    --accent: #1A1A19;
-    --accent-foreground: #F5F5F4;
-    --destructive: #DC2626;
+    /* Dark studio — consistent, not mixed with unrelated styles */
+    --background: #000000;
+    --foreground: #F5F5F7;
+    --card: #0A0A0A;
+    --card-foreground: #F5F5F7;
+    --popover: #0A0A0A;
+    --popover-foreground: #F5F5F7;
+
+    --primary: #0A84FF;
+    --primary-foreground: #FFFFFF;
+
+    --secondary: #1C1C1E;
+    --secondary-foreground: #F5F5F7;
+
+    --muted: #1C1C1E;
+    --muted-foreground: #8E8E93;
+
+    --accent: #2C2C2E;
+    --accent-foreground: #F5F5F7;
+
+    --destructive: #FF453A;
     --destructive-foreground: #FFFFFF;
-    --border: #2A2927;
-    --input: #2A2927;
-    --ring: #A78BFA;
+
+    --border: #38383A;
+    --input: #38383A;
+    --ring: #0A84FF;
+
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
+    --shadow: 0 10px 30px -10px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 20px 40px -20px rgb(0 0 0 / 0.6);
   }
 }
 
@@ -66,9 +89,9 @@
   }
 
   body {
-    @apply bg-[#FAFAF9] text-[#1C1917] antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "ss01";
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   }
 
   html {
@@ -76,12 +99,14 @@
   }
 
   ::selection {
-    background: rgba(124, 58, 237, 0.15);
-    color: #1C1917;
+    background: rgba(10, 102, 194, 0.15);
+    color: #1D1D1F;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: "Playfair Display", Georgia, serif;
+  /* Focus rings — themed from the palette */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgb(10 102 194 / 0.25);
   }
 }
 
@@ -90,53 +115,12 @@
     text-wrap: balance;
   }
 
-  .glass {
-    background: rgba(250, 250, 249, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+  .shadow-premium {
+    box-shadow: var(--shadow);
   }
 
-  .glass-dark {
-    background: rgba(10, 10, 9, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .shadow-luxury {
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.04);
-  }
-
-  .shadow-luxury-lg {
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.06), 0 8px 10px -6px rgb(0 0 0 / 0.04);
-  }
-
-  .border-luxury {
-    border-color: #E7E5E4;
-  }
-
-  .eq-bar {
-    transform-origin: bottom;
-    animation: eq 1.4s ease-in-out infinite;
-  }
-  .eq-bar:nth-child(2) { animation-delay: 0.2s; }
-  .eq-bar:nth-child(3) { animation-delay: 0.4s; }
-  .eq-bar:nth-child(4) { animation-delay: 0.1s; }
-  .eq-bar:nth-child(5) { animation-delay: 0.3s; }
-
-  @keyframes eq {
-    0%, 100% { transform: scaleY(0.3); }
-    50% { transform: scaleY(1); }
-  }
-
-  .fade-in {
-    animation: fadeIn 0.6s ease-out both;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+  .shadow-premium-lg {
+    box-shadow: var(--shadow-lg);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -146,17 +130,5 @@
       transition-duration: 0.001ms !important;
       scroll-behavior: auto !important;
     }
-  }
-}
-
-@layer components {
-  .nav-item {
-    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200;
-  }
-  .nav-item.active {
-    @apply bg-[#7C3AED]/10 text-[#7C3AED] border border-[#7C3AED]/20 shadow-sm;
-  }
-  .nav-item.inactive {
-    @apply text-[#78716C] hover:bg-[#F3F4F6] hover:text-[#1C1917];
   }
 }

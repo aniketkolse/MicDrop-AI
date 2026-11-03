@@ -20,6 +20,7 @@ import {
   Select,
   Slider,
   Textarea,
+  Input,
 } from "@/components/ui";
 import { VoicePreviewButton } from "@/components/voice-preview-button";
 import { extractDocumentText, MAX_EXTRACTED_CHARS, type ExtractedDocument } from "@/lib/document-parser";
@@ -31,7 +32,7 @@ const SOURCE_TABS: { id: SourceType; label: string }[] = [
   { id: "topic", label: "Topic" },
   { id: "prompt", label: "Prompt" },
   { id: "document", label: "Document" },
-  { id: "text", label: "Paste" },
+  { id: "text", label: "Paste text" },
 ];
 
 const TOPIC_IDEAS = [
@@ -95,29 +96,31 @@ export function CreateWorkspace() {
   );
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-      {/* Source */}
-      <section className="animate-fade-up rounded-xl border border-border bg-surface">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[10px] font-medium tracking-[0.18em] text-[#6D6D7B]">01</span>
-            <h2 className="text-[13.5px] font-semibold text-text-primary">Source material</h2>
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_400px]">
+      {/* Source material */}
+      <section className="rounded-xl border border-input bg-card shadow">
+        <div className="flex items-center justify-between border-b border-accent px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+              1
+            </span>
+            <h2 className="text-sm font-semibold text-foreground">Source material</h2>
           </div>
-          <Badge tone="neutral">Step 1 of 3</Badge>
+          <Badge tone="neutral" size="sm">Step 1 of 3</Badge>
         </div>
 
-        <div className="p-5">
-          <div className="grid grid-cols-4 gap-1 rounded-lg border border-border bg-[#131318] p-1">
+        <div className="p-5 space-y-6">
+          <div className="grid grid-cols-4 gap-1 rounded-md border border-input bg-secondary p-[1px]">
             {SOURCE_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => updateSettings({ sourceType: tab.id })}
                 className={cn(
-                  "flex h-8 items-center justify-center gap-1.5 rounded-md text-[12px] font-medium transition-colors",
+                  "flex h-7 items-center justify-center gap-1.5 rounded-md text-[11px] font-medium transition-colors duration-150",
                   settings.sourceType === tab.id
-                    ? "bg-[#2B2638] text-text-primary"
-                    : "text-[#77778A] hover:text-text-secondary",
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent/50",
                 )}
               >
                 {tab.label}
@@ -125,193 +128,193 @@ export function CreateWorkspace() {
             ))}
           </div>
 
-          <div className="mt-5">
-            {settings.sourceType === "topic" ? (
-              <div>
-                <Label hint="3–500 characters">What is this episode about?</Label>
-                <Input
-                  value={settings.topic}
-                  onChange={(event) => updateSettings({ topic: event.target.value })}
-                  placeholder="e.g. The quiet revolution in Indian language AI"
-                  maxLength={500}
-                  className="h-12 text-[15px]"
-                />
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {TOPIC_IDEAS.map((idea) => (
-                    <button
-                      key={idea}
-                      type="button"
-                      onClick={() => updateSettings({ topic: idea })}
-                      className="rounded-full border border-border bg-[#16161C] px-2.5 py-1 text-[10.5px] text-[#8C8C9B] transition-colors hover:border-[#454553] hover:text-text-secondary"
-                    >
-                      {idea}
-                    </button>
-                  ))}
-                </div>
+          {settings.sourceType === "topic" && (
+            <div className="space-y-3">
+              <Label hint="3–500 characters">What is this episode about?</Label>
+              <Input
+                value={settings.topic}
+                onChange={(event) => updateSettings({ topic: event.target.value })}
+                placeholder="e.g. The quiet revolution in Indian language AI"
+                maxLength={500}
+                className="h-10 text-base"
+              />
+              <div className="flex flex-wrap gap-2">
+                {TOPIC_IDEAS.map((idea) => (
+                  <button
+                    key={idea}
+                    type="button"
+                    onClick={() => updateSettings({ topic: idea })}
+                    className="rounded-full border border-input bg-transparent px-3 py-1.5 text-[11px] text-muted-foreground transition-colors duration-150 hover:border-primary/50 hover:text-primary"
+                  >
+                    {idea}
+                  </button>
+                ))}
               </div>
-            ) : null}
+            </div>
+          )}
 
-            {settings.sourceType === "prompt" ? (
-              <div>
-                <Label hint="Brief the showrunner">Write a detailed prompt</Label>
-                <Textarea
-                  rows={9}
-                  value={settings.sourceText}
-                  onChange={(event) => setSourceText(event.target.value)}
-                  placeholder="Explain the rise of Indic language models for a general audience. Focus on why voice matters, include a friendly debate about trade-offs, and end with practical implications for creators…"
-                  maxLength={MAX_EXTRACTED_CHARS}
-                  className="min-h-[190px]"
-                />
-                <p className="mt-1.5 text-right text-[10px] text-[#666674]">
-                  {settings.sourceText.length.toLocaleString()} / 60,000
-                </p>
-              </div>
-            ) : null}
+          {settings.sourceType === "prompt" && (
+            <div className="space-y-3">
+              <Label hint="Brief the showrunner. Up to 60,000 characters.">Write a detailed prompt</Label>
+              <Textarea
+                rows={9}
+                value={settings.sourceText}
+                onChange={(event) => setSourceText(event.target.value)}
+                placeholder="Explain the rise of Indic language models for a general audience. Focus on why voice matters, include a friendly debate about trade-offs, and end with practical implications for creators…"
+                maxLength={MAX_EXTRACTED_CHARS}
+                className="min-h-[200px]"
+              />
+              <p className="text-right text-[11px] text-muted-foreground">
+                {settings.sourceText.length.toLocaleString()} / 60,000
+              </p>
+            </div>
+          )}
 
-            {settings.sourceType === "document" ? (
-              <div>
-                <Label hint="PDF · DOCX · TXT · max 10 MB">Upload a document</Label>
-                <div
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setDragging(true);
-                  }}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={onDrop}
-                  className={cn(
-                    "relative flex flex-col items-center justify-center rounded-xl border border-dashed px-5 py-9 text-center transition-colors",
-                    dragging
-                      ? "border-primary/60 bg-primary/[0.06]"
-                      : "border-border bg-[#141419] hover:border-[#414150]",
-                  )}
-                >
-                  {extracting ? (
-                    <>
-                      <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary" />
-                      <p className="text-[12.5px] text-text-secondary">Extracting text locally…</p>
-                    </>
-                  ) : documentInfo ? (
-                    <>
-                      <FileText className="mb-3 h-6 w-6 text-primary" />
-                      <p className="max-w-full truncate text-[12.5px] font-medium text-text-primary">
-                        {documentInfo.fileName}
-                      </p>
-                      <p className="mt-1 text-[11px] text-text-secondary">
-                        {documentInfo.pages ? `${documentInfo.pages} pages · ` : ""}
-                        {documentInfo.text.length.toLocaleString()} characters extracted
-                      </p>
-                      <div className="mt-3 flex gap-2">
-                        <Button size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                          Replace
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setDocumentInfo(null);
-                            setSourceText("", undefined);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }}
-                        >
-                          <X className="h-3 w-3" /> Remove
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="mb-3 h-6 w-6 text-[#7A7590]" />
-                      <p className="text-[12.5px] font-medium text-text-primary">
-                        Drop a file, or{" "}
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="text-primary underline-offset-2 hover:underline"
-                        >
-                          browse
-                        </button>
-                      </p>
-                      <p className="mt-1 text-[10.5px] text-[#6B6B78]">
-                        Parsed in your browser. Nothing is uploaded until you generate.
-                      </p>
-                    </>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.docx,.txt,application/pdf,text/plain"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void handleFile(file);
-                    }}
-                  />
-                </div>
-
-                {documentInfo ? (
-                  <div className="mt-4">
-                    <Label
-                      hint={`${settings.sourceText.length.toLocaleString()} chars`}
-                    >
-                      Review extracted text
-                    </Label>
-                    <Textarea
-                      rows={8}
-                      value={settings.sourceText}
-                      onChange={(event) => setSourceText(event.target.value, documentInfo.fileName)}
-                      maxLength={MAX_EXTRACTED_CHARS}
-                      className="min-h-[160px] font-mono text-[11.5px] leading-relaxed text-[#C9C9D4]"
-                    />
-                    {documentInfo.truncated ? (
-                      <p className="mt-1.5 text-[10.5px] text-[#E5B567]">
-                        Document exceeded the 60,000 character limit. Only the first section is used.
-                      </p>
-                    ) : null}
+          {settings.sourceType === "document" && (
+            <div className="space-y-3">
+              <Label hint="PDF · DOCX · TXT · Max 10 MB. Parsed in your browser.">Upload a document</Label>
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+                className={cn(
+                  "relative flex flex-col items-center justify-center rounded-xl border px-5 py-10 text-center transition-colors duration-150",
+                  dragging
+                    ? "border-primary bg-primary/5"
+                    : "border-dashed border-input hover:border-ring hover:bg-accent/30",
+                )}
+              >
+                {extracting ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <p className="text-sm text-foreground">Extracting text locally…</p>
                   </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            {settings.sourceType === "text" ? (
-              <div>
-                <Label hint="Up to 60,000 characters">Paste existing text</Label>
-                <Textarea
-                  rows={9}
-                  value={settings.sourceText}
-                  onChange={(event) => setSourceText(event.target.value)}
-                  placeholder="Paste an article, notes, a chapter, or a transcript here…"
-                  maxLength={MAX_EXTRACTED_CHARS}
-                  className="min-h-[190px]"
+                ) : documentInfo ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <FileText className="mb-2 h-6 w-6 text-primary" />
+                    <p className="max-w-full truncate text-sm font-medium text-foreground">
+                      {documentInfo.fileName}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {documentInfo.pages ? `${documentInfo.pages} pages · ` : ""}
+                      {documentInfo.text.length.toLocaleString()} characters extracted
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                        Replace
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setDocumentInfo(null);
+                          setSourceText("", undefined);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                      >
+                        <X className="h-3 w-3" /> Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <UploadCloud className="mb-2 h-6 w-6 text-muted-foreground" />
+                    <p className="text-sm font-medium text-foreground">
+                      Drop a file, or{" "}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-primary underline-offset-4 hover:underline"
+                      >
+                        browse
+                      </button>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Parsed in your browser. Nothing is uploaded until you generate.
+                    </p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.txt,application/pdf,text/plain"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void handleFile(file);
+                  }}
                 />
-                <p className="mt-1.5 text-right text-[10px] text-[#666674]">
-                  {settings.sourceText.length.toLocaleString()} / 60,000
-                </p>
               </div>
-            ) : null}
-          </div>
 
-          <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-[#333041] bg-[#191722] px-3 py-2.5">
-            <LibraryBig className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p className="text-[10.5px] leading-relaxed text-[#9292A1]">
-              <span className="text-[#C9C9D4]">No live web research.</span> Sarvam-105B writes from
-              its model knowledge and your source. The script is labelled accordingly — verify
-              specific claims before publishing.
-            </p>
+              {documentInfo && (
+                <div className="mt-4 space-y-2">
+                  <Label hint={`${settings.sourceText.length.toLocaleString()} chars`}>
+                    Review extracted text
+                  </Label>
+                  <Textarea
+                    rows={8}
+                    value={settings.sourceText}
+                    onChange={(event) => setSourceText(event.target.value, documentInfo.fileName)}
+                    maxLength={MAX_EXTRACTED_CHARS}
+                    className="min-h-[160px] font-mono text-[11.5px] leading-relaxed text-muted-foreground"
+                  />
+                  {documentInfo.truncated ? (
+                    <p className="text-[11px] text-amber-500">
+                      Document exceeded the 60,000 character limit. Only the first section is used.
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          )}
+
+          {settings.sourceType === "text" && (
+            <div className="space-y-3">
+              <Label hint="Up to 60,000 characters.">Paste existing text</Label>
+              <Textarea
+                rows={9}
+                value={settings.sourceText}
+                onChange={(event) => setSourceText(event.target.value)}
+                placeholder="Paste an article, notes, a chapter, or a transcript here…"
+                maxLength={MAX_EXTRACTED_CHARS}
+                className="min-h-[200px]"
+              />
+              <p className="text-right text-[11px] text-muted-foreground">
+                {settings.sourceText.length.toLocaleString()} / 60,000
+              </p>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-input bg-secondary px-3 py-3">
+            <div className="flex items-center gap-2">
+              <LibraryBig className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                <span className="text-foreground">No live web research.</span> Sarvam-105B writes from
+                its model knowledge and your source. The script is labelled accordingly — verify
+                specific claims before publishing.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Configuration */}
-      <section className="animate-fade-up rounded-xl border border-border bg-surface xl:sticky xl:top-6 xl:self-start">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[10px] font-medium tracking-[0.18em] text-[#6D6D7B]">02</span>
-            <h2 className="text-[13.5px] font-semibold text-text-primary">Episode controls</h2>
+      {/* Episode controls */}
+      <section className="rounded-xl border border-input bg-card shadow xl:sticky xl:top-6 xl:self-start">
+        <div className="flex items-center justify-between border-b border-accent px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+              2
+            </span>
+            <h2 className="text-sm font-semibold text-foreground">Episode controls</h2>
           </div>
-          <Wand2 className="h-3.5 w-3.5 text-[#6D6D7B]" />
+          <Wand2 className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
 
-        <div className="space-y-4 p-5">
-          <div>
+        <div className="space-y-5 p-5">
+          <div className="space-y-2">
             <Label hint={`${settings.duration} minutes`}>Duration</Label>
             <Segmented
               size="sm"
@@ -326,7 +329,7 @@ export function CreateWorkspace() {
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label hint={language.native}>Language</Label>
             <Select
               value={settings.language}
@@ -342,8 +345,8 @@ export function CreateWorkspace() {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div className="grid gap-3">
+            <div className="space-y-2">
               <Label>Speakers</Label>
               <Segmented
                 size="sm"
@@ -356,7 +359,7 @@ export function CreateWorkspace() {
                 onChange={(speakerCount) => updateSettings({ speakerCount })}
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label>Depth</Label>
               <Segmented
                 size="sm"
@@ -367,7 +370,7 @@ export function CreateWorkspace() {
             </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label>Conversation style</Label>
             <Select
               value={settings.style}
@@ -377,13 +380,13 @@ export function CreateWorkspace() {
             >
               {STYLES.map((style) => (
                 <option key={style.id} value={style.id}>
-                  {style.label} — {style.hint}
+                  {style.label}
                 </option>
               ))}
             </Select>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label>Target audience</Label>
             <Select
               value={settings.audience}
@@ -399,17 +402,17 @@ export function CreateWorkspace() {
             </Select>
           </div>
 
-          <div className="rounded-lg border border-border bg-[#141419] p-3">
-            <div className="mb-2.5 flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6D6D7B]">
+          <div className="rounded-lg border border-input bg-secondary p-3">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">
                 Cast & voices
               </span>
-              <span className="text-[9.5px] text-[#5E5E6B]">{language.model}</span>
+              <span className="text-[10px] text-muted-foreground">{language.model}</span>
             </div>
             <div className="space-y-2">
               {selectedVoices.map((voiceId, index) => (
-                <div key={index} className="flex items-center gap-1.5">
-                  <span className="w-12 shrink-0 text-[10.5px] text-[#7E7E8D]">
+                <div key={index} className="flex items-center gap-2">
+                  <span className="w-12 shrink-0 text-[11px] text-muted-foreground">
                     Host {index + 1}
                   </span>
                   <Select
@@ -433,7 +436,7 @@ export function CreateWorkspace() {
             </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label hint={`${settings.pace.toFixed(2)}×`}>Speaking pace</Label>
             <Slider
               min={0.75}
@@ -442,53 +445,48 @@ export function CreateWorkspace() {
               value={settings.pace}
               onChange={(event) => updateSettings({ pace: Number(event.target.value) })}
             />
-            <div className="mt-1 flex justify-between text-[9.5px] text-[#5E5E6B]">
+            <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
               <span>Deliberate</span>
               <span>Brisk</span>
             </div>
           </div>
 
           {apiReady === false ? (
-            <div className="rounded-lg border border-[#5B2B33] bg-[#251A1D] px-3 py-2.5 text-[10.5px] leading-relaxed text-[#E3A2A9]">
-              <span className="font-medium text-error">Sarvam key required.</span> Add{" "}
-              <code className="rounded bg-[#1B1316] px-1 py-0.5 text-[10px]">SARVAM_API_KEY</code>{" "}
-              to <code className="rounded bg-[#1B1316] px-1 py-0.5 text-[10px]">.env.local</code> or
-              Vercel environment variables. The pipeline is wired and will report the exact API
-              error until a valid key is present.
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5">
+              <div className="flex items-start gap-2 text-[11px] leading-relaxed text-destructive">
+                <span className="flex shrink-0">
+                  <span className="text-destructive">Sarvam key required.</span> Add{" "}
+                  <code className="rounded bg-destructive/20 px-1 py-0.5 text-[10px]">
+                    SARVAM_API_KEY
+                  </code>{" "}
+                  to <code className="rounded bg-destructive/20 px-1 py-0.5 text-[10px]">.env.local</code> or
+                  Vercel environment variables. The pipeline is wired and will report the exact API error
+                  until a valid key is present.
+                </span>
+              </div>
             </div>
           ) : null}
 
-          <Button
-            variant="primary"
-            size="lg"
-            className="w-full"
-            loading={busyScript}
-            onClick={() => void createScript()}
-          >
-            {busyScript ? "Writing the episode…" : "Generate script"}
-            {!busyScript ? <ArrowRight className="h-4 w-4" /> : null}
-          </Button>
+          <div className="mt-2">
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full"
+              loading={busyScript}
+              onClick={() => void createScript()}
+            >
+              {busyScript ? "Writing the episode…" : "Generate script"}
+              {!busyScript ? <ArrowRight className="h-4 w-4" /> : null}
+            </Button>
+          </div>
 
-          <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-[#666674]">
-            <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[#7C6AA8]" />
+          <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
+            <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
             Sarvam-105B writes the script. Bulbul v4 Flash performs each speaker. Nothing is
             simulated.
           </p>
         </div>
       </section>
     </div>
-  );
-}
-
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  const { className, ...rest } = props;
-  return (
-    <input
-      {...rest}
-      className={cn(
-        "h-10 w-full rounded-lg border border-border bg-[#131318] px-3 text-sm text-text-primary placeholder:text-[#5C5C68] outline-none transition-colors focus:border-[#57506F] focus:ring-2 focus:ring-primary/20",
-        className,
-      )}
-    />
   );
 }

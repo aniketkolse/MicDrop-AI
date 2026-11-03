@@ -2,38 +2,44 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Sparkles, ListMusic, Mic2, Settings, LogOut, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  ListMusic,
+  Mic2,
+  Settings,
+  LogOut,
+  User,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useStudio } from "@/components/studio-provider";
+import { signOut } from "@/lib/services/auth";
 
 const NAV = [
-  { href: "/dashboard", label: "Studio", icon: Sparkles },
+  { href: "/", label: "Studio", icon: LayoutDashboard },
+  { href: "/dashboard/create", label: "Create podcast", icon: Sparkles },
   { href: "/episodes", label: "Library", icon: ListMusic },
-  { href: "/voices", label: "Voices", icon: Mic2 },
+  { href: "/voices", label: "Voice studio", icon: Mic2 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { setAuthState } = useStudio();
 
   return (
-    <>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[272px] border-r border-[#E7E5E4] bg-white px-6 py-10 lg:flex">
-        <Link href="/" className="flex items-center gap-2 mb-16">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E7E5E4] bg-[#FAFAF9] px-2">
-            <span className="eq-bar w-[2px] rounded-full bg-[#7C3AED]" style={{ height: "14px", animationDelay: "0s" }} />
-            <span className="eq-bar w-[2px] rounded-full bg-[#7C3AED]" style={{ height: "20px", animationDelay: "0.12s" }} />
-            <span className="eq-bar w-[2px] rounded-full bg-[#7C3AED]" style={{ height: "16px", animationDelay: "0.06s" }} />
-            <span className="eq-bar w-[2px] rounded-full bg-[#7C3AED]" style={{ height: "18px", animationDelay: "0.18s" }} />
-            <span className="eq-bar w-[2px] rounded-full bg-[#7C3AED]" style={{ height: "12px", animationDelay: "0.03s" }} />
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-input bg-card px-5 py-8 lg:flex">
+      <div className="flex flex-col">
+        <Link href="/" className="flex items-center gap-3 mb-10">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Mic2 className="h-5 w-5" />
           </span>
-          <span className="text-2xl font-bold text-[#1C1917] tracking-tight italic font-serif">MICDROP<span className="text-[#7C3AED]"> AI</span></span>
+          <span className="text-xl font-bold text-foreground tracking-tight">MicDrop<span className="text-muted-foreground"> AI</span></span>
         </Link>
 
-        <div className="px-2 text-[10px] font-semibold text-[#78716C] uppercase tracking-wider mb-6">
-          Studio
-        </div>
-        <nav className="flex flex-col gap-0.5">
+        <nav className="flex flex-col gap-1">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
@@ -41,58 +47,49 @@ export function Sidebar() {
                 key={href}
                 href={href}
                 className={cn(
-                  "nav-item mb-1",
-                  active ? "nav-item.active" : "nav-item.inactive",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
-                <Icon className={cn("h-4 w-4", active ? "text-[#7C3AED]" : "text-[#78716C]")} />
+                <Icon className="h-4 w-4 shrink-0" />
                 {label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto px-2 pt-12">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-[#E7E5E4] bg-[#F8F9FC] mb-6">
-            <div className="h-8 w-8 rounded-xl border border-[#E7E5E4] bg-white flex items-center justify-center text-[#7C3AED] font-medium text-xs">
+        <div className="mt-auto pt-8 border-t border-accent">
+          <div className="flex items-center gap-3 px-2 py-4 rounded-lg border border-input bg-secondary mb-6">
+            <div className="h-8 w-8 rounded-lg bg-card flex items-center justify-center text-primary font-medium text-xs">
               <User className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#1C1917] truncate">Guest</p>
-              <p className="text-[10px] text-[#94A3B8]">Not signed in</p>
+              <p className="text-sm font-medium text-foreground truncate">Guest</p>
+              <p className="text-[11px] text-muted-foreground">Not signed in</p>
             </div>
           </div>
           <Button
             variant="outline"
-            onClick={() => {
-              window.location.href = "/auth/login";
+            size="sm"
+            onClick={async () => {
+              try {
+                await signOut();
+              } catch {
+                // Ignore sign-out errors; still clear local state
+              }
+              setAuthState(null, false);
+              router.push("/auth/login");
             }}
-            className="w-full justify-start text-[#DC2626] hover:bg-[#FFF5F5] border-[#FCA5A5]"
+            className="w-full text-destructive hover:bg-destructive/5 border-destructive/20"
           >
-            <LogOut className="h-4 w-4 mr-3" />
+            <LogOut className="h-3.5 w-3.5 mr-2" />
             Sign in
           </Button>
         </div>
-      </aside>
-
-      {/* Mobile top nav */}
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#E7E5E4] bg-white/80 backdrop-blur-lg px-4 lg:hidden">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-1.5">
-            <Sparkles className="h-4 w-4 text-[#7C3AED]" />
-          </span>
-          <span className="font-bold text-[#1C1917] tracking-tight italic font-serif">MICDROP<span className="text-[#7C3AED]"> AI</span></span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" asChild>
-            <Link href="/auth/login">Sign in</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/dashboard/create">Get started</Link>
-          </Button>
-        </div>
-      </header>
-    </>
+      </div>
+    </aside>
   );
 }
 

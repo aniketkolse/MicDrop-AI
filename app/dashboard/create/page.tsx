@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createPodcastRecord } from "@/lib/services/podcasts";
 import { Button, Input, Select, Textarea, Label, Segmented } from "@/components/ui";
 import { LANGUAGES, STYLES, AUDIENCES, DEPTHS } from "@/lib/voices";
-import { Sparkles, FileText, Mic2, Layout } from "lucide-react";
+import { Mic2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function CreatePage() {
   const router = useRouter();
@@ -38,36 +39,34 @@ export default function CreatePage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F5F5F7]">
-      <nav className="flex items-center justify-between border-b border-[#D2D2D7] bg-white px-6 py-4">
+    <div className="min-h-screen bg-background">
+      <nav className="flex items-center justify-between border-b border-input bg-card/80 backdrop-blur px-6 py-4 sticky top-0 z-20">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <span className="flex items-center gap-1 text-sm font-medium">
-            <span className="h-3 w-3 text-[#86868B]">
-              <Mic2 className="h-3 w-3" />
-            </span>
+          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <Mic2 className="h-3.5 w-3.5 text-muted-foreground" />
             Back to studio
           </span>
         </Button>
-        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[#86868B]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#007AFF]" />
+        <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-tight">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
           Create podcast
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
+      <div className="mx-auto max-w-3xl px-6 py-10 lg:px-9">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="space-y-3">
             <Label>Podcast title</Label>
             <Input
               placeholder="e.g. The future of Indian language AI"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="h-11 text-lg"
+              className="h-10 text-base"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Description</Label>
             <Textarea
               rows={3}
@@ -78,7 +77,7 @@ export default function CreatePage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Language</Label>
               <Select
                 value={language}
@@ -91,7 +90,7 @@ export default function CreatePage() {
                 ))}
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Style</Label>
               <Select value={style} onChange={(e) => setStyle(e.target.value as typeof style)}>
                 {STYLES.map((s) => (
@@ -99,7 +98,7 @@ export default function CreatePage() {
                 ))}
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Audience</Label>
               <Select
                 value={AUDIENCES[0].id}
@@ -113,7 +112,7 @@ export default function CreatePage() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Source</Label>
             <Segmented
               options={[
@@ -127,23 +126,24 @@ export default function CreatePage() {
           </div>
 
           {sourceType === "topic" ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Topic</Label>
               <Input
                 placeholder="Enter your podcast topic"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 required
+                className="h-10 text-base"
               />
             </div>
           ) : sourceType === "document" ? (
-            <div className="space-y-2 border border-[#D2D2D7] rounded-2xl bg-white p-4">
-              <FileText className="mb-3 h-5 w-5 text-[#86868B]" />
+            <div className="space-y-3 rounded-xl border border-input bg-secondary p-5">
+              <FileTextLabel />
               <Label>Upload document (PDF · DOCX · TXT)</Label>
-              <input type="file" accept=".pdf,.docx,.txt" className="block w-full text-sm text-[#86868B]" />
+              <input type="file" accept=".pdf,.docx,.txt" className="block w-full text-sm text-muted-foreground" />
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Paste text</Label>
               <Textarea
                 rows={6}
@@ -156,14 +156,31 @@ export default function CreatePage() {
 
           <Button
             type="submit"
-            className="w-full h-11 bg-[#007AFF] text-white text-sm font-medium rounded-xl hover:bg-[#0066CC] disabled:opacity-50"
+            className="w-full h-10 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50"
             loading={loading}
           >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Create podcast
+            <span className="flex items-center gap-1.5">
+              Create podcast
+            </span>
           </Button>
         </form>
       </div>
+    </div>
+  );
+}
+
+function FileTextLabel() {
+  return (
+    <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
+      <span className="h-4 w-4 text-muted-foreground">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <path d="M16 13h3" />
+          <path d="M16 17h3" />
+        </svg>
+      </span>
+      Document
     </div>
   );
 }

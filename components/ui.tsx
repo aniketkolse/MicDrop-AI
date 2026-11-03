@@ -31,7 +31,7 @@ export function nanoid(size = 10): string {
   return id;
 }
 
-// --- Button (Luxury) ---
+// --- Button ---
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "outline";
@@ -40,15 +40,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const buttonVariants: Record<string, string> = {
-  primary: "bg-[#7C3AED] text-white hover:bg-[#6D28D9] shadow-luxury",
-  secondary: "bg-[#F3F4F6] text-[#1C1917] hover:bg-[#E7E5E4]",
-  ghost: "bg-transparent text-[#7C3AED] hover:bg-[#F3F4F6]",
-  danger: "bg-[#DC2626] text-white hover:bg-[#B91C1C]",
-  outline: "border border-[#E7E5E4] bg-transparent text-[#1C1917] hover:bg-[#F3F4F6]",
+  primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+  ghost: "bg-transparent text-foreground hover:bg-accent",
+  danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+  outline: "border border-input bg-transparent text-foreground hover:bg-accent",
 };
 
 const buttonSizes: Record<string, string> = {
-  sm: "h-9 px-3 text-[11px] font-medium",
+  sm: "h-8 px-3 text-xs font-medium",
   md: "h-10 px-4 text-sm font-medium",
   lg: "h-11 px-6 text-sm font-medium",
 };
@@ -59,7 +59,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]/20 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none shadow-sm",
+        "inline-flex items-center justify-center rounded-lg font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none",
         buttonVariants[variant],
         buttonSizes[size],
         className,
@@ -67,7 +67,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       {...props}
     >
       {loading ? (
-        <span className="h-4 w-4 animate-spin rounded-full border-[2px] border-current border-t-transparent" />
+        <span className="h-4 w-4 animate-ping rounded-full border-[2px] border-current border-t-transparent opacity-75" />
       ) : null}
       {children}
     </button>
@@ -82,7 +82,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
     <input
       ref={ref}
       className={cn(
-        "flex h-10 w-full rounded-xl border border-[#E7E5E4] bg-transparent px-3 text-sm text-[#1C1917] outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] disabled:opacity-40 placeholder:text-[#A8A29E]",
+        "flex h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring disabled:opacity-40 placeholder:text-muted-foreground transition-colors",
         className,
       )}
       {...props}
@@ -100,7 +100,7 @@ export const Textarea = React.forwardRef<
   <textarea
     ref={ref}
     className={cn(
-      "flex w-full rounded-xl border border-[#E7E5E4] bg-transparent px-3 py-2.5 text-sm leading-relaxed text-[#1C1917] outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] disabled:opacity-40 placeholder:text-[#A8A29E]",
+      "flex w-full rounded-md border border-input bg-transparent px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring disabled:opacity-40 placeholder:text-muted-foreground transition-colors",
       className,
     )}
     {...props}
@@ -118,7 +118,7 @@ export const Select = React.forwardRef<
     <select
       ref={ref}
       className={cn(
-        "flex h-10 w-full rounded-xl border border-[#E7E5E4] bg-transparent px-3 pr-9 text-sm text-[#1C1917] outline-none focus:border-[#7C3AED] focus:ring-1 focus:ring-[#7C3AED] appearance-none cursor-pointer disabled:opacity-40",
+        "flex h-10 w-full rounded-md border border-input bg-transparent px-3 pr-9 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring appearance-none cursor-pointer disabled:opacity-40 transition-colors",
         className,
       )}
       {...props}
@@ -126,7 +126,7 @@ export const Select = React.forwardRef<
       {children}
     </select>
     <svg
-      className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#78716C]"
+      className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
       viewBox="0 0 16 16"
       fill="none"
       aria-hidden
@@ -147,10 +147,10 @@ export function Label({
 }: React.LabelHTMLAttributes<HTMLLabelElement> & { hint?: string }) {
   return (
     <div className="mb-2">
-      <label className={cn("block text-xs font-semibold text-[#5C5452] uppercase tracking-wider mb-1", className)} {...props}>
+      <label className={cn("block text-xs font-semibold text-muted-foreground tracking-tight uppercase mb-1", className)} {...props}>
         {children}
       </label>
-      {hint ? <span className="text-[10px] text-[#94A3B8]">{hint}</span> : null}
+      {hint ? <span className="mt-0.5 text-[11px] text-muted-foreground">{hint}</span> : null}
     </div>
   );
 }
@@ -169,11 +169,11 @@ export function Badge({
   className?: string;
 }) {
   const tones: Record<string, string> = {
-    neutral: "border-[#E7E5E4] bg-[#F3F4F6] text-[#5C5452]",
-    primary: "bg-[#7C3AED] text-white",
-    success: "bg-[#16A34A] text-white",
-    error: "bg-[#DC2626] text-white",
-    warning: "bg-[#C5A059] text-white",
+    neutral: "border border-accent bg-accent text-accent-foreground",
+    primary: "bg-primary text-primary-foreground",
+    success: "bg-green-500 text-white",
+    error: "bg-destructive text-destructive-foreground",
+    warning: "bg-amber-500 text-white",
   } as const;
   const sizes: Record<string, string> = {
     sm: "px-2 py-0.5 text-[10px]",
@@ -211,7 +211,7 @@ export function Segmented<T extends string | number>({
   return (
     <div
       className={cn(
-        "grid gap-1 rounded-xl border border-[#E7E5E4] bg-[#F8F9FC] p-1",
+        "grid gap-1 rounded-md border border-input bg-secondary p-1",
         className,
       )}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
@@ -223,11 +223,11 @@ export function Segmented<T extends string | number>({
           type="button"
           onClick={() => onChange(option.value)}
           className={cn(
-            "rounded-lg font-medium transition-all duration-200",
+            "rounded-md font-medium transition-colors duration-150",
             size === "sm" ? "h-8 text-[11px]" : "h-9 text-sm",
             value === option.value
-              ? "bg-[#7C3AED] text-white shadow-sm"
-              : "text-[#1C1917] hover:bg-[#F3F4F6]",
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-foreground hover:bg-secondary/50",
           )}
         >
           {option.label}
@@ -247,7 +247,7 @@ export function Slider({
     <input
       type="range"
       className={cn(
-        "h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#D6D3D1] accent-[#7C3AED] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#7C3AED]",
+        "h-1.5 w-full cursor-pointer appearance-none rounded-full bg-accent/40 accent-primary [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary",
         className,
       )}
       {...props}
@@ -274,13 +274,13 @@ export function Switch({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full border transition-all duration-200",
-        checked ? "border-[#16A34A] bg-[#16A34A]" : "border-[#E7E5E4] bg-[#F3F4F6]",
+        "relative h-6 w-11 shrink-0 rounded-full border transition-colors duration-150",
+        checked ? "border-primary bg-primary" : "border-input bg-secondary",
       )}
     >
       <span
         className={cn(
-          "absolute top-0.5 h-5 w-5 rounded-full transition-transform duration-200",
+          "absolute top-0.5 h-5 w-5 rounded-full transition-transform duration-150",
           checked ? "translate-x-5 bg-white" : "translate-x-0.5 bg-white",
         )}
       />
@@ -302,12 +302,12 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-[#E7E5E4] bg-[#F8F9FC]/50 px-8 py-20 text-center">
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#E7E5E4] bg-white text-[#7C3AED] shadow-sm">
+    <div className="flex flex-col items-center justify-center rounded-xl border border-accent/50 bg-secondary/30 px-8 py-20 text-center">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-card text-primary shadow-sm">
         {icon}
       </div>
-      <h3 className="text-lg font-semibold text-[#1C1917] tracking-tight">{title}</h3>
-      <p className="mt-2 max-w-sm text-[#78716C] text-sm leading-relaxed">{description}</p>
+      <h3 className="text-lg font-semibold text-foreground tracking-tight">{title}</h3>
+      <p className="mt-2 max-w-sm text-muted-foreground text-sm leading-relaxed">{description}</p>
       {action ? <div className="mt-8">{action}</div> : null}
     </div>
   );
@@ -318,7 +318,7 @@ export function EmptyState({
 export function Spinner({ className }: { className?: string }) {
   return (
     <span
-      className={cn("inline-block h-4 w-4 animate-spin rounded-full border-[2px] border-current border-t-transparent", className)}
+      className={cn("inline-block h-4 w-4 animate-ping rounded-full border-[2px] border-current border-t-transparent", className)}
     />
   );
 }
@@ -329,7 +329,7 @@ export function Card({ children, className, padding = "p-6" }: { children: React
   return (
     <div
       className={cn(
-        "rounded-3xl border border-[#E7E5E4] bg-white shadow-sm",
+        "rounded-xl border border-input bg-card shadow-sm",
         padding,
         className,
       )}
@@ -340,13 +340,19 @@ export function Card({ children, className, padding = "p-6" }: { children: React
 }
 
 export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("flex flex-col space-y-1.5 px-6 py-4", className)}>{children}</div>;
+  return <div className={cn("flex flex-col space-y-1 px-6 py-4", className)}>{children}</div>;
 }
 
 export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn("text-lg font-semibold text-[#1C1917] tracking-tight", className)} {...props} />;
+  return <h3 className={cn("text-lg font-semibold text-foreground tracking-tight", className)} {...props} />;
 }
 
 export function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
   return <div className={cn("px-6 py-4", className)}>{children}</div>;
+}
+
+// --- Separator ---
+
+export function Separator({ className }: { className?: string }) {
+  return <div className={cn("h-px bg-accent mx-auto", className)} />;
 }

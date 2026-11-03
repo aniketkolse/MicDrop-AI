@@ -2,6 +2,18 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+function isConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return Boolean(
+    url &&
+      key &&
+      !url.includes("your_supabase") &&
+      !key.includes("your_supabase") &&
+      /^https?:\/\//i.test(url),
+  );
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -9,19 +21,16 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   // If Supabase is not configured, skip auth middleware entirely.
   // The app remains functional with local IndexedDB storage.
-  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes("your_supabase")) {
+  if (!isConfigured()) {
     return response;
   }
 
   try {
     const supabase = createServerClient(
-      supabaseUrl,
-      supabaseAnonKey,
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
@@ -38,7 +47,7 @@ export async function middleware(request: NextRequest) {
 
     await supabase.auth.getSession();
   } catch {
-    // Supabase client creation failed — continue without auth.
+    // Supabase client creation or session check failed — continue without auth.
   }
 
   return response;
