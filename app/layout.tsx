@@ -5,6 +5,7 @@ import { StudioProvider } from "@/components/studio-provider";
 import { Sidebar } from "@/components/shell/sidebar";
 import { AudioPlayer } from "@/components/shell/audio-player";
 import { Toast } from "@/components/shell/toast";
+import { ErrorBoundary, ErrorBoundaryFallback } from "@/components/error-boundary";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-background text-foreground antialiased">
         <StudioProvider>
           <Sidebar />
-          <main className="min-h-screen lg:pl-72">{children}</main>
+          <main className="min-h-screen lg:pl-72">
+            <ErrorBoundary fallback={ErrorBoundaryFallback}>{children}</ErrorBoundary>
+          </main>
           <AudioPlayer />
           <Toast />
         </StudioProvider>
