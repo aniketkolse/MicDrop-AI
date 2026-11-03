@@ -14,14 +14,87 @@ import {
 } from "lucide-react";
 import { useStudio } from "@/components/studio-provider";
 import { Badge, Button, EmptyState, Input } from "@/components/ui";
-import { deleteEpisode, getEpisodeAudio, listEpisodes } from "@/lib/db";
+import {
+  deleteEpisode,
+  getEpisodeAudio,
+  listEpisodes,
+  saveEpisode,
+} from "@/lib/db";
 import { formatDate, formatTime } from "@/lib/utils";
 import type { EpisodeMeta } from "@/types/podcast";
 
+interface SupabasePodcast {
+  id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+  language: string;
+  status: string;
+  audio_path: string | null;
+  podcast_speakers: any[];
+  podcast_segments: any[];
+}
+
+function toEpisodeMeta(p: SupabasePodcast): EpisodeMeta {
+  return {
+    id: p.id,
+    title: p.title,
+    description: p.description ?? "",
+    createdAt: new Date(p.created_at).getTime(),
+    duration: 0,
+    language: (p.language as any) ?? "en-IN",
+    speakerNames: p.podcast_speakers.map((s) => s.speaker_name),
+    style: "casual",
+    script: {
+      title: p.title,
+      description: p.description ?? "",
+      duration: 0,
+      language: (p.language as any) ?? "en-IN",
+      speakers: p.podcast_speakers.map((s) => ({
+        id: s.id,
+        name: s.speaker_name,
+        role: s.speaker_role,
+        voiceId: s.voice_id,
+      })),
+      segments: p.podcast_segments.map((s) => ({
+        id: s.id,
+        heading: s.heading,
+        speaker: s.speaker_id || "host1",
+        text: s.dialogue,
+      })),
+      researchNote: "Synced from Supabase.",
+    },
+    settings: {
+      sourceType: "topic",
+      topic: p.title,
+      sourceText: "",
+      duration: 5,
+      language: (p.language as any) ?? "en-IN",
+      speakerCount: (p.podcast_speakers.length as unknown as 1 | 2 | 3),
+      style: "casual",
+      audience: "general",
+      depth: "standard",
+      pace: 1,
+      voiceIds: p.podcast_speakers.map((s) => s.voice_id ?? ""),
+      musicEnabled: false,
+      musicVolume: 0.16,
+    },
+    hasAudio: Boolean(p.audio_path),
+  };
+}
+
 export default function EpisodesPage() {
   const router = useRouter();
-  const { loadEpisode, episodeId, resetStudio, notify } = useStudio();
+  const {
+    loadEpisode,
+    loadEpisodeFromSupabase,
+    episodeId,
+    resetStudio,
+    notify,
+    isAuthenticated,
+  } = useStudio();
   const [episodes, setEpisodes] = React.useState<EpisodeMeta[]>([]);
+  const [supabaseEpisodes, setSupabaseEpisodes] = React.useState<SupabasePodcast[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [query, setQuery] = React.useState("");
   const [workingId, setWorkingId] = React.useState<string | null>(null);
@@ -29,21 +102,45 @@ export default function EpisodesPage() {
   const refresh = React.useCallback(async () => {
     setLoading(true);
     try {
-      setEpisodes(await listEpisodes());
+      if (isAuthenticated) {
+        const res = await fetch("/api/podcasts", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const pods: SupabasePodcast[] = data.podcasts ?? [];
+          setSupabaseEpisodes(pods);
+          const meta = pods.map(toEpisodeMeta);
+          setEpisodes(meta);
+        } else {
+          const local = await listEpisodes();
+          setEpisodes(local);
+          setSupabaseEpisodes([]);
+        }
+      } else {
+        const local = await listEpisodes();
+        setEpisodes(local);
+        setSupabaseEpisodes([]);
+      }
     } catch {
-      notify("error", "Could not read the local episode library in this browser.");
+      notify("error", "Could not read the episode library.");
     } finally {
       setLoading(false);
     }
-  }, [notify]);
+  }, [isAuthenticated, notify]);
 
   React.useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const openEpisode = async (meta: EpisodeMeta) => {
+  const openEpisode = async (meta: EpisodeMeta, isSupabase = false) => {
     setWorkingId(meta.id);
     try {
+      if (isSupabase && isAuthenticated) {
+        const data = await loadEpisodeFromSupabase(meta.id);
+        if (data) {
+          router.push("/");
+          return;
+        }
+      }
       const audio = await getEpisodeAudio(meta.id);
       loadEpisode(meta, audio);
       router.push("/");
@@ -54,12 +151,27 @@ export default function EpisodesPage() {
     }
   };
 
-  const downloadEpisode = async (meta: EpisodeMeta) => {
+  const downloadEpisode = async (meta: EpisodeMeta, isSupabase = false) => {
     setWorkingId(meta.id);
     try {
+      if (isSupabase && isAuthenticated && meta.hasAudio) {
+        const res = await fetch(`/api/podcasts/${meta.id}/audio`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.signedUrl) {
+            window.location.href = data.signedUrl;
+            setWorkingId(null);
+            return;
+          }
+        }
+        notify("info", "No audio available for download.");
+        setWorkingId(null);
+        return;
+      }
       const audio = await getEpisodeAudio(meta.id);
       if (!audio) {
         notify("info", "This episode has a script but no rendered audio yet.");
+        setWorkingId(null);
         return;
       }
       const url = URL.createObjectURL(audio);
@@ -77,13 +189,24 @@ export default function EpisodesPage() {
     }
   };
 
-  const removeEpisode = async (meta: EpisodeMeta) => {
-    if (!window.confirm(`Delete “${meta.title}” from this browser? This cannot be undone.`)) return;
+  const removeEpisode = async (meta: EpisodeMeta, isSupabase = false) => {
+    if (
+      !window.confirm(`Delete “${meta.title}”? This cannot be undone.`)
+    )
+      return;
     setWorkingId(meta.id);
     try {
-      await deleteEpisode(meta.id);
-      if (meta.id === episodeId) resetStudio();
-      setEpisodes((prev) => prev.filter((episode) => episode.id !== meta.id));
+      if (isSupabase && isAuthenticated) {
+        const res = await fetch(`/api/podcasts/${meta.id}`, {
+          method: "DELETE",
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error("Delete failed");
+      } else {
+        await deleteEpisode(meta.id);
+        if (meta.id === episodeId) resetStudio();
+      }
+      await refresh();
       notify("success", "Episode deleted.");
     } catch {
       notify("error", "Could not delete that episode.");
@@ -92,7 +215,9 @@ export default function EpisodesPage() {
     }
   };
 
-  const filtered = episodes.filter((episode) =>
+  const allEpisodes = isAuthenticated ? supabaseEpisodes.map(toEpisodeMeta) : episodes;
+
+  const filtered = allEpisodes.filter((episode) =>
     `${episode.title} ${episode.description} ${episode.speakerNames.join(" ")}`
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
@@ -103,14 +228,16 @@ export default function EpisodesPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#6F6F7D]">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Local archive
+            <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED]" />
+            {isAuthenticated ? "Cloud library" : "Local archive"}
           </div>
-          <h1 className="mt-2.5 font-display text-[36px] leading-none text-text-primary sm:text-[42px]">
+          <h1 className="mt-2.5 font-display text-[36px] leading-none text-[#1C1917] sm:text-[42px]">
             My episodes
           </h1>
-          <p className="mt-2 text-[12px] text-text-secondary">
-            Stored in this browser with IndexedDB. Your audio never leaves the device.
+          <p className="mt-2 text-[#78716C] text-sm">
+            {isAuthenticated
+              ? "Stored in Supabase. Accessible across devices when signed in."
+              : "Stored in this browser with IndexedDB. Your audio never leaves the device."}
           </p>
         </div>
         <div className="flex w-full gap-2 sm:w-auto">
@@ -131,16 +258,18 @@ export default function EpisodesPage() {
 
       <div className="mt-6">
         {loading ? (
-          <div className="flex items-center justify-center py-24 text-text-secondary">
+          <div className="flex items-center justify-center py-24 text-[#78716C]">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading library…
           </div>
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<AudioLines className="h-5 w-5" />}
-            title={episodes.length === 0 ? "No episodes yet" : "No matching episodes"}
+            title={allEpisodes.length === 0 ? "No episodes yet" : "No matching episodes"}
             description={
-              episodes.length === 0
-                ? "Generate a script, render the voices, and your first episode will be saved here automatically."
+              allEpisodes.length === 0
+                ? isAuthenticated
+                  ? "Create your first podcast and it will be saved to the cloud."
+                  : "Generate a script, render the voices, and your first episode will be saved here automatically."
                 : "Try a different search term, or create a new episode."
             }
             action={
@@ -150,74 +279,77 @@ export default function EpisodesPage() {
             }
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {filtered.map((episode) => (
-              <article
-                key={episode.id}
-                className="group flex flex-col rounded-xl border border-border bg-surface p-4 transition-colors hover:border-[#3E3E4A]"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-[10px] text-[#6F6F7D]">
-                    <CalendarDays className="h-3 w-3" />
-                    {formatDate(episode.createdAt)}
-                  </span>
-                  <div className="flex gap-1.5">
-                    <Badge tone={episode.hasAudio ? "success" : "neutral"}>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map((episode) => {
+              const isSupabase = isAuthenticated && !episodes.includes(episode);
+              return (
+                <article
+                  key={episode.id}
+                  className="group flex flex-col rounded-3xl border border-[#E7E5E4] bg-white shadow-sm p-8 hover:border-[#7C3AED]/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7E5E4] bg-[#F8F9FC] text-[#7C3AED]">
+                      <AudioLines className="h-5 w-5" />
+                    </div>
+                    <Badge tone={episode.hasAudio ? "success" : "neutral"} size="sm">
                       {episode.hasAudio ? "audio ready" : "script only"}
                     </Badge>
-                    <Badge tone="neutral">{episode.language}</Badge>
                   </div>
-                </div>
+                  <h2 className="text-xl font-bold text-[#1C1917] leading-tight mb-3 group-hover:text-[#7C3AED] font-serif">
+                    {episode.title}
+                  </h2>
+                  <p className="text-[#78716C] text-sm line-clamp-2 mb-6">
+                    {episode.description || "No description yet."}
+                  </p>
+                  <div className="flex items-center gap-3 text-[10px] text-[#94A3B8]">
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3" />
+                      {formatDate(episode.createdAt)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {episode.speakerNames.join(", ") || "Solo"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <AudioLines className="h-3 w-3" />
+                      {episode.hasAudio ? "Audio ready" : "Script only"}
+                    </span>
+                  </div>
 
-                <h2 className="mt-2.5 line-clamp-2 text-[15px] font-semibold leading-snug text-text-primary">
-                  {episode.title}
-                </h2>
-                <p className="mt-1.5 line-clamp-2 text-[11.5px] leading-relaxed text-text-secondary">
-                  {episode.description}
-                </p>
-
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-[#777785]">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {episode.speakerNames.join(", ") || "Solo"}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <AudioLines className="h-3 w-3" />
-                    {formatTime(episode.duration)}
-                  </span>
-                  <span className="capitalize">{episode.style}</span>
-                </div>
-
-                <div className="mt-4 flex items-center gap-1.5 border-t border-[#26262F] pt-3">
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    loading={workingId === episode.id}
-                    onClick={() => void openEpisode(episode)}
-                  >
-                    <Play className="h-3 w-3 fill-current" />
-                    Open
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={!episode.hasAudio}
-                    onClick={() => void downloadEpisode(episode)}
-                  >
-                    <Download className="h-3 w-3" />
-                    WAV
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="ml-auto text-[#777785] hover:text-error"
-                    onClick={() => void removeEpisode(episode)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </article>
-            ))}
+                  <div className="mt-auto pt-6">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        loading={workingId === episode.id}
+                        onClick={() =>
+                          void openEpisode(episode, isSupabase && isAuthenticated)
+                      }
+                      >
+                        <Play className="h-3 w-3 fill-current" /> Open
+                      </Button>
+                      {episode.hasAudio ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => void downloadEpisode(episode, isSupabase && isAuthenticated)}
+                        >
+                          <Download className="h-3 w-3" /> WAV
+                        </Button>
+                      ) : null}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="ml-auto text-[#DC2626] hover:bg-[#FFF5F5] border-[#FCA5A5]"
+                        onClick={() => void removeEpisode(episode, isSupabase && isAuthenticated)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
