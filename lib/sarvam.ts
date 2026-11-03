@@ -77,6 +77,7 @@ export async function sarvamRequest<T>(
   let lastError: SarvamError | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const attemptStart = Date.now();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const onAbort = () => controller.abort();
@@ -96,6 +97,8 @@ export async function sarvamRequest<T>(
         cache: "no-store",
       });
 
+      const attemptDuration = Date.now() - attemptStart;
+
       const text = await res.text();
       let parsed: unknown = null;
       try {
@@ -106,7 +109,7 @@ export async function sarvamRequest<T>(
 
       if (process.env.NODE_ENV !== "production") {
         console.log(
-          `[Sarvam] ${reqId} POST ${path} status=${res.status} body_length=${text.length}`,
+          `[Sarvam] ${reqId} POST ${path} status=${res.status} body_length=${text.length} attempt_duration_ms=${attemptDuration}`,
         );
       }
 
