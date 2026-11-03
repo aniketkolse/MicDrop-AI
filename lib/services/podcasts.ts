@@ -29,6 +29,9 @@ export async function createPodcastRecord(values: {
   language: string;
   status?: string;
   script?: unknown;
+  original_prompt?: string;
+  source_type?: string;
+  source_document_path?: string;
 }) {
   const supabase = await createServerClient();
   if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
@@ -43,11 +46,14 @@ export async function createPodcastRecord(values: {
       language: values.language,
       status: values.status ?? "draft",
       script: values.script ?? null,
+      original_prompt: values.original_prompt ?? null,
+      source_type: values.source_type ?? null,
+      source_document_path: values.source_document_path ?? null,
     })
     .select()
     .single();
   if (error) throw error;
-  revalidatePath("/episodes");
+  revalidatePath("/dashboard");
   return data;
 }
 
@@ -65,6 +71,21 @@ export async function listPodcasts() {
   });
 }
 
+export async function getPodcast(id: string) {
+  return withSupabase(async (supabase) => {
+    const user = await getUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from("podcasts")
+      .select("*, podcast_speakers(*), podcast_segments(*)")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+    if (error) throw error;
+    return data;
+  });
+}
+
 export async function updatePodcast(id: string, values: Record<string, unknown>) {
   const supabase = await createServerClient();
   if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
@@ -75,7 +96,7 @@ export async function updatePodcast(id: string, values: Record<string, unknown>)
     .select()
     .single();
   if (error) throw error;
-  revalidatePath("/episodes");
+  revalidatePath("/dashboard");
   return data;
 }
 
@@ -84,5 +105,64 @@ export async function deletePodcast(id: string) {
   if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
   const { error } = await supabase.from("podcasts").delete().eq("id", id);
   if (error) throw error;
-  revalidatePath("/episodes");
+  revalidatePath("/dashboard");
+}
+
+export async function createGenerationJob(values: {
+  podcastId: string;
+  jobType: "script" | "audio" | "translation" | "rewrite";
+}) {
+  const supabase = await createServerClient();
+  if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
+  const user = await getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data, error } = await supabase
+    .from("generation_jobs")
+    .insert({
+      podcast_id: values.podcastId,
+      user_id: user.id,
+      job_type: values.jobType,
+      status: "pending",
+      progress: 0,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateGenerationJob(jobId: string, values: {
+  status?: "pending" | "running" | "completed" | "failed";
+  progress?: number;
+  errorMessage?: string;
+}) {
+  const supabase = await createServerClient();
+  if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
+  const { data, error } = await supabase
+    .from("generation_jobs")
+    .update({
+      ...(values.status !== undefined ? { status: values.status } : {}),
+      ...(values.progress !== undefined ? { progress: values.progress } : {}),
+      ...(values.errorMessage !== undefined ? { error_message: values.errorMessage } : {}),
+      ...(values.status === "completed" || values.status === "failed"
+        ? { completed_at: new Date().toISOString() }
+        : {}),
+    })
+    .eq("id", jobId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getGenerationJobs(podcastId: string) {
+  return withSupabase(async (supabase) => {
+    const { data, error } = await supabase
+      .from("generation_jobs")
+      .select("*")
+      .eq("podcast_id", podcastId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  });
 }

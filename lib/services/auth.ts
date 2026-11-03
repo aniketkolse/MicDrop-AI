@@ -62,10 +62,11 @@ export async function updateProfile(displayName: string, avatarUrl?: string) {
   const supabase = await createServerClient();
   if (!supabase) throw new Error("Supabase is not configured. Add your project credentials to .env.local");
   const user = await getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("profiles")
     .upsert({
-      id: user?.id,
+      id: user.id,
       display_name: displayName,
       avatar_url: avatarUrl ?? null,
       updated_at: new Date().toISOString(),
