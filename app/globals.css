@@ -2,109 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #101014;
-  --surface: #18181f;
-  --surface-secondary: #202029;
-  --primary: #a78bfa;
-  --text-primary: #f5f5f7;
-  --text-secondary: #a1a1aa;
-  --border: #30303a;
-  --success: #34d399;
-  --error: #f87171;
-}
-
-* {
-  border-color: var(--border);
-}
-
-html {
-  color-scheme: dark;
-  scroll-behavior: smooth;
-}
-
-body {
-  background: var(--background);
-  color: var(--text-primary);
-  font-feature-settings: "cv02", "cv03", "cv04", "ss01";
-  -webkit-font-smoothing: antialiased;
-}
-
-::selection {
-  background: rgba(167, 139, 250, 0.28);
-  color: #fff;
-}
-
-/* Subtle studio glow, not a decorative gradient wash. */
-.app-canvas {
-  background:
-    radial-gradient(900px 380px at 20% -10%, rgba(167, 139, 250, 0.07), transparent 65%),
-    radial-gradient(700px 300px at 90% 0%, rgba(103, 232, 249, 0.035), transparent 60%),
-    var(--background);
-}
-
-.surface-grid {
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.022) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #2c2c36;
-  border-radius: 999px;
-  border: 2px solid var(--background);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3a3a46;
-}
-
-input[type="range"] {
-  outline: none;
-}
-
-/* Equalizer motif used sparingly in the brand and player. */
-.eq-bar {
-  transform-origin: bottom;
-  animation: eq 1.2s ease-in-out infinite;
-}
-.eq-bar:nth-child(2) {
-  animation-delay: 0.18s;
-}
-.eq-bar:nth-child(3) {
-  animation-delay: 0.34s;
-}
-.eq-bar:nth-child(4) {
-  animation-delay: 0.08s;
-}
-.eq-bar:nth-child(5) {
-  animation-delay: 0.26s;
-}
-
-@keyframes eq {
-  0%,
-  100% {
-    transform: scaleY(0.32);
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #1d1d1f;
+    --card: #ffffff;
+    --card-foreground: #1d1d1f;
+    --popover: #ffffff;
+    --popover-foreground: #1d1d1f;
+    --primary: #007aff;
+    --primary-foreground: #ffffff;
+    --secondary: #f5f5f7;
+    --secondary-foreground: #1d1d1f;
+    --muted: #f5f5f7;
+    --muted-foreground: #86868b;
+    --accent: #f5f5f7;
+    --accent-foreground: #1d1d1f;
+    --destructive: #ff3b30;
+    --destructive-foreground: #ffffff;
+    --border: #d2d2d7;
+    --input: #d2d2d7;
+    --ring: #007aff;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
   }
-  50% {
-    transform: scaleY(1);
+
+  .dark {
+    --background: #000000;
+    --foreground: #f5f5f7;
+    --card: #000000;
+    --card-foreground: #f5f5f7;
+    --popover: #000000;
+    --popover-foreground: #f5f5f7;
+    --primary: #0a84ff;
+    --primary-foreground: #ffffff;
+    --secondary: #1c1c1e;
+    --secondary-foreground: #f5f5f7;
+    --muted: #1c1c1e;
+    --muted-foreground: #86868b;
+    --accent: #1c1c1e;
+    --accent-foreground: #f5f5f7;
+    --destructive: #ff3b30;
+    --destructive-foreground: #ffffff;
+    --border: #3a3a3c;
+    --input: #3a3a3c;
+    --ring: #0a84ff;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-[#f5f5f7] text-[#1d1d1f] antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::selection {
+    background: rgba(0, 122, 255, 0.2);
+    color: #ffffff;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .shadow-apple {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-apple-lg {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .eq-bar {
+    transform-origin: bottom;
+    animation: eq 1.2s ease-in-out infinite;
+  }
+  .eq-bar:nth-child(2) { animation-delay: 0.18s; }
+  .eq-bar:nth-child(3) { animation-delay: 0.34s; }
+  .eq-bar:nth-child(4) { animation-delay: 0.08s; }
+  .eq-bar:nth-child(5) { animation-delay: 0.26s; }
+
+  @keyframes eq {
+    0%, 100% { transform: scaleY(0.32); }
+    50% { transform: scaleY(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .nav-item {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200;
+  }
+  .nav-item.active {
+    @apply bg-[#007AFF] text-white shadow-sm;
+  }
+  .nav-item.inactive {
+    @apply text-[#1d1d1f] hover:bg-[#f5f5f7] hover:text-[#007AFF];
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Download, Gauge, Pause, Play, Volume2 } from "lucide-react";
+import { Download, Pause, Play, Volume2, Gauge, RefreshCw, Sparkles } from "lucide-react";
 import { useStudio } from "@/components/studio-provider";
 import { formatTime } from "@/lib/utils";
 import { Slider } from "@/components/ui";
@@ -21,36 +21,36 @@ export function AudioPlayer() {
   const progress = player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0;
 
   return (
-    <div className="fixed inset-x-0 bottom-14 z-50 border-t border-[#34343F] bg-[#141419]/98 backdrop-blur lg:bottom-0 lg:left-[236px]">
-      <div className="h-[2px] w-full bg-[#26262F]">
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#D2D2D7] bg-white/95 backdrop-blur-lg lg:bottom-auto lg:left-[260px] lg:h-full lg:w-[320px] lg:border-r lg:border-t-0 lg:rounded-none lg:shadow-none">
+      <div className="h-[2px] w-full bg-[#D2D2D7]">
         <div
-          className="h-full bg-primary transition-[width] duration-150"
+          className="h-full bg-[#007AFF] transition-[width] duration-150"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="mx-auto flex max-w-[1240px] items-center gap-3 px-4 py-3 lg:gap-5 lg:px-8">
+      <div className="mx-auto max-w-[1240px] items-center gap-4 px-6 py-4 lg:flex lg:px-8 lg:py-6">
         <button
           type="button"
           onClick={togglePlay}
           aria-label={player.playing ? "Pause episode" : "Play episode"}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-[#17121F] transition-transform hover:scale-[1.04] active:scale-95"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#007AFF] text-white transition-transform hover:scale-[1.04] active:scale-95"
         >
           {player.playing ? (
-            <Pause className="h-4 w-4 fill-current" />
+            <Pause className="h-4.5 w-4.5 fill-current" />
           ) : (
-            <Play className="ml-0.5 h-4 w-4 fill-current" />
+            <Play className="ml-0.5 h-4.5 w-4.5 fill-current" />
           )}
         </button>
 
-        <div className="hidden w-44 shrink-0 md:block">
-          <p className="truncate text-[12.5px] font-medium text-text-primary">{script.title}</p>
-          <p className="mt-0.5 truncate text-[10.5px] text-text-secondary">
+        <div className="hidden w-56 shrink-0 lg:block">
+          <p className="truncate text-sm font-semibold text-[#1D1D1F]">{script.title}</p>
+          <p className="mt-1 truncate text-[11px] text-[#86868B]">
             {script.speakers.map((s) => s.name).join(" · ")}
           </p>
         </div>
 
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span className="w-9 shrink-0 text-right font-mono text-[10px] tabular-nums text-text-secondary">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="w-9 shrink-0 text-right font-mono text-[11px] tabular-nums text-[#86868B]">
             {formatTime(player.currentTime)}
           </span>
           <Slider
@@ -62,13 +62,13 @@ export function AudioPlayer() {
             onChange={(event) => seek(Number(event.target.value))}
             className="flex-1"
           />
-          <span className="w-9 shrink-0 font-mono text-[10px] tabular-nums text-text-secondary">
+          <span className="w-9 shrink-0 font-mono text-[11px] tabular-nums text-[#86868B]">
             {formatTime(player.duration)}
           </span>
         </div>
 
-        <div className="hidden items-center gap-2 xl:flex">
-          <Volume2 className="h-3.5 w-3.5 text-text-secondary" />
+        <div className="hidden lg:flex items-center gap-3">
+          <Volume2 className="h-3.5 w-3.5 text-[#86868B]" />
           <Slider
             aria-label="Volume"
             min={0}
@@ -80,18 +80,18 @@ export function AudioPlayer() {
           />
         </div>
 
-        <div className="relative hidden sm:block">
+        <div className="relative hidden lg:block">
           <button
             type="button"
             onClick={() => setRateOpen((open) => !open)}
-            className="flex h-8 items-center gap-1 rounded-lg border border-border bg-surface-2 px-2 text-[11px] text-text-secondary hover:text-text-primary"
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-[#D2D2D7] bg-[#F5F5F7] px-2.5 text-[11px] text-[#1D1D1F] hover:bg-[#E5E5EA]"
             aria-label="Playback speed"
           >
             <Gauge className="h-3.5 w-3.5" />
             {player.rate.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")}×
           </button>
           {rateOpen ? (
-            <div className="absolute bottom-10 right-0 z-10 w-28 rounded-lg border border-border bg-surface p-1 shadow-xl">
+            <div className="absolute bottom-[56px] right-0 z-10 w-28 rounded-xl border border-[#D2D2D7] bg-white shadow-lg p-1">
               {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
                 <button
                   key={rate}
@@ -100,7 +100,7 @@ export function AudioPlayer() {
                     setRate(rate);
                     setRateOpen(false);
                   }}
-                  className="block w-full rounded-md px-2.5 py-1.5 text-left text-[11.5px] text-text-secondary hover:bg-surface-2 hover:text-text-primary"
+                  className="block w-full rounded-lg px-2.5 py-1.5 text-left text-[11px] text-[#1D1D1F] hover:bg-[#F5F5F7]"
                 >
                   {rate}×
                 </button>
@@ -112,10 +112,10 @@ export function AudioPlayer() {
         <a
           href={audioUrl}
           download={`${slug}.wav`}
-          className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 text-[11.5px] text-text-secondary transition-colors hover:border-[#454553] hover:text-text-primary"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[#D2D2D7] bg-[#F5F5F7] px-3 text-[11px] font-medium text-[#1D1D1F] hover:bg-[#E5E5EA]"
         >
           <Download className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">WAV</span>
+          <span className="hidden lg:inline">WAV</span>
         </a>
       </div>
     </div>

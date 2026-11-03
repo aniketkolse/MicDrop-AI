@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Instrument_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { StudioProvider } from "@/components/studio-provider";
 import { Sidebar } from "@/components/shell/sidebar";
@@ -12,13 +12,6 @@ const inter = Inter({
   display: "swap",
 });
 
-const instrument = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-instrument",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "MicDrop AI — Podcast Studio",
   description:
@@ -28,11 +21,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${instrument.variable}`}>
-      <body className="app-canvas min-h-screen font-sans antialiased">
+    <html lang="en" className={inter.variable}>
+      <body className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F]">
         <StudioProvider>
           <Sidebar />
-          <main className="min-h-screen pb-36 lg:pl-[236px]">{children}</main>
+          <main className="min-h-screen lg:pl-[260px]">{children}</main>
           <AudioPlayer />
           <Toast />
         </StudioProvider>
