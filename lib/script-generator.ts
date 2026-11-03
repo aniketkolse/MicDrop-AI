@@ -163,6 +163,31 @@ function repairScript(raw: RawScript, input: ScriptInput): PodcastScript {
     throw new Error("The model returned too few dialogue segments.");
   }
 
+  // Validate speaker IDs in segments match script speakers
+  const validSpeakerIds = new Set(speakers.map((s) => s.id));
+  for (const segment of segments) {
+    if (!validSpeakerIds.has(segment.speaker)) {
+      throw new Error(
+        `Segment "${segment.heading}" references unknown speaker "${segment.speaker}".`,
+      );
+    }
+  }
+
+  // Validate segment count is reasonable for the requested duration
+  // Expect roughly 1 segment per minute of audio
+  const minSegments = Math.max(2, Math.floor(input.duration / 2));
+  const maxSegments = Math.min(input.duration * 3, 60);
+  if (segments.length < minSegments) {
+    throw new Error(
+      `Script has ${segments.length} segments but ${minSegments} are expected for ${input.duration} minutes.`,
+    );
+  }
+  if (segments.length > maxSegments) {
+    throw new Error(
+      `Script has ${segments.length} segments which exceeds maximum ${maxSegments} for ${input.duration} minutes.`,
+    );
+  }
+
   return {
     title: raw.title.trim(),
     description: raw.description.trim(),
@@ -179,7 +204,7 @@ export async function generateScript(input: ScriptInput): Promise<PodcastScript>
   const messages = buildScriptMessages(input);
   let lastError = "";
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const content = await chatCompletion(messages, 6000);
     const parsed = safeJsonParse<RawScript>(content);
     if (!parsed) {
@@ -208,6 +233,6 @@ export async function generateScript(input: ScriptInput): Promise<PodcastScript>
   }
 
   throw new Error(
-    `Script generation failed validation twice (${lastError}). Please retry — a different sample usually succeeds.`,
+    `Script generation failed validation after 3 attempts (${lastError}). Please retry — a different sample usually succeeds.`,
   );
 }

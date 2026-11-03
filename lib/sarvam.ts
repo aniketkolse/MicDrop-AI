@@ -39,10 +39,15 @@ export function ttsModel(): string {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function generateRequestId(): string {
+  return `srv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 interface RequestOptions {
   timeoutMs?: number;
   retries?: number;
   signal?: AbortSignal;
+  requestId?: string;
 }
 
 /**
@@ -52,7 +57,7 @@ interface RequestOptions {
 export async function sarvamRequest<T>(
   path: string,
   body: Record<string, unknown>,
-  { timeoutMs = 55000, retries = 1, signal }: RequestOptions = {},
+  { timeoutMs = 55000, retries = 2, signal, requestId }: RequestOptions = {},
 ): Promise<T> {
   const key = sarvamKey();
   if (!key) {
@@ -61,6 +66,12 @@ export async function sarvamRequest<T>(
       503,
       "missing_api_key",
     );
+  }
+
+  const reqId = requestId || generateRequestId();
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[Sarvam] ${reqId} POST ${path} attempt=1 body_length=${JSON.stringify(body).length}`);
   }
 
   let lastError: SarvamError | null = null;
@@ -78,6 +89,7 @@ export async function sarvamRequest<T>(
           "Content-Type": "application/json",
           "api-subscription-key": key,
           Authorization: `Bearer ${key}`,
+          "X-Request-Id": reqId,
         },
         body: JSON.stringify(body),
         signal: controller.signal,
@@ -90,6 +102,12 @@ export async function sarvamRequest<T>(
         parsed = text ? JSON.parse(text) : null;
       } catch {
         parsed = null;
+      }
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log(
+          `[Sarvam] ${reqId} POST ${path} status=${res.status} body_length=${text.length}`,
+        );
       }
 
       if (!res.ok) {
@@ -230,7 +248,7 @@ export async function textToSpeech(params: {
       output_audio_codec: process.env.SARVAM_AUDIO_CODEC || "mp3",
       enable_preprocessing: true,
     },
-    { timeoutMs: 60000, retries: 1 },
+    { timeoutMs: 60000, retries: 2, requestId: generateRequestId() },
   );
   const audios = extractAudioBase64(payload);
   if (audios.length === 0) {
@@ -253,7 +271,7 @@ export async function translateText(params: {
       model: "mayura:v1",
       numerals_format: "international",
     },
-    { timeoutMs: 45000, retries: 1 },
+    { timeoutMs: 45000, retries: 2, requestId: generateRequestId() },
   );
   if (!payload?.translated_text) {
     throw new SarvamError("Sarvam returned an empty translation.", 502, "empty_translation");
@@ -272,6 +290,7 @@ interface ChatPayload {
 
 export async function chatCompletion(messages: ChatMessage[], maxTokens = 6000): Promise<string> {
   let payload: ChatPayload;
+  const requestId = generateRequestId();
 
   try {
     payload = await sarvamRequest<ChatPayload>(
@@ -282,7 +301,7 @@ export async function chatCompletion(messages: ChatMessage[], maxTokens = 6000):
         max_tokens: maxTokens,
         temperature: 0.7,
       },
-      { timeoutMs: 55000, retries: 1 },
+      { timeoutMs: 55000, retries: 2, requestId },
     );
   } catch (error) {
     // V2 requires beta access on some accounts; fall back to the stable V1 route.
@@ -295,7 +314,7 @@ export async function chatCompletion(messages: ChatMessage[], maxTokens = 6000):
           max_tokens: maxTokens,
           temperature: 0.7,
         },
-        { timeoutMs: 55000, retries: 1 },
+        { timeoutMs: 55000, retries: 2, requestId },
       );
     } else {
       throw error;
